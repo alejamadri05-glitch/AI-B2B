@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Receptionist Demo</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="intro" id="intro">
+      <p class="eyebrow" id="demo-badge" hidden>Live demo</p>
+      <h1 id="intro-title">Your 24/7 AI receptionist</h1>
+      <p id="intro-text">Answers your website and text messages in seconds, books jobs into open arrival windows, and alerts you about emergencies. Try it: ask about a broken AC, prices, or book a visit.</p>
+      <p class="hint">Bookings and leads from this chat show up on the <a id="dashboard-link" href="#">live dashboard</a>.</p>
+    </section>
+
+    <section class="chat" aria-label="Chat">
+      <header class="chat-header">
+        <div class="avatar" id="avatar">R</div>
+        <div>
+          <div class="chat-title" id="business-name">Loading…</div>
+          <div class="chat-subtitle" id="agent-line">Virtual assistant · replies instantly</div>
+        </div>
+      </header>
+      <div class="messages" id="messages" role="log" aria-live="polite"></div>
+      <form class="composer" id="composer">
+        <input id="input" type="text" autocomplete="off" maxlength="2000" placeholder="Type a message…" aria-label="Message">
+        <button type="submit" id="send">Send</button>
+      </form>
+      <p class="disclaimer">AI assistant. In an emergency involving gas, fire or smoke, leave the home and call 911.</p>
+    </section>
+  </main>
+  <script src="/chat.js" type="module"></script>
+</body>
+</html>

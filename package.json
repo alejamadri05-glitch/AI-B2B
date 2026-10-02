@@ -1,0 +1,19 @@
+{
+  "name": "ai-receptionist",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI receptionist template for US home-services businesses (HVAC, plumbing, electrical, roofing).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "new-prospect": "node scripts/new-prospect.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "slug": "demo-hvac",
+  "demo": true,
+  "business_name": "Bluebonnet Heating & Air",
+  "agent_name": "Riley",
+  "trade": "HVAC (heating and air conditioning)",
+  "city_state": "Austin, TX",
+  "phone": "(512) 555-0142",
+  "website": "",
+  "timezone": "America/Chicago",
+  "brand_color": "#1f6feb",
+  "greeting": "Hi! I'm Riley, the virtual assistant for Bluebonnet Heating & Air. Is your AC or heater acting up, or can I help you schedule maintenance?",
+  "hours": "Monday-Friday 7 AM-6 PM, Saturday 8 AM-2 PM. 24/7 emergency service.",
+  "service_area": {
+    "description": "Austin, Round Rock, Pflugerville, Cedar Park and Georgetown",
+    "zip_codes": ["78701", "78702", "78703", "78704", "78705", "78717", "78722", "78723", "78726", "78727", "78728", "78729", "78731", "78741", "78744", "78745", "78748", "78749", "78750", "78751", "78752", "78753", "78754", "78757", "78758", "78759", "78613", "78626", "78628", "78633", "78660", "78664", "78665", "78681"]
+  },
+  "services": [
+    { "name": "AC repair", "description": "Diagnosis and repair of central AC, heat pumps and mini-splits, all major brands." },
+    { "name": "Heating repair", "description": "Gas furnaces, electric furnaces and heat pumps." },
+    { "name": "Maintenance tune-up", "description": "Seasonal AC or furnace tune-up: cleaning, refrigerant check, electrical and safety inspection." },
+    { "name": "New system installation", "description": "Free in-home estimate for replacing AC, furnace or heat pump systems." },
+    { "name": "Indoor air quality", "description": "Filters, UV lights, humidifiers and duct cleaning." }
+  ],
+  "pricing": {
+    "diagnostic_fee": "$89 service call, waived if the customer approves the repair",
+    "after_hours_fee": "$150 for evenings, Sundays and holidays",
+    "tune_up": "$119 per system; members of the Comfort Club get 2 tune-ups per year included",
+    "installation_estimate": "Free",
+    "notes": [
+      "Repair prices depend on the diagnosis; the technician gives an upfront written price before any work starts.",
+      "Never quote a repair or installation total in chat."
+    ]
+  },
+  "financing": "Financing available for new systems, with approved credit; the comfort advisor explains options during the estimate.",
+  "warranties": "1-year labor warranty on repairs; 10-year parts and labor on new installations when registered.",
+  "emergency": {
+    "available_24_7": true,
+    "examples": "No heat when it is below 40°F, no AC when it is above 95°F with a baby, elderly or medically fragile person at home, water leaking from the unit onto ceilings or floors.",
+    "on_call_response": "The on-call technician is notified and calls back within 15 minutes."
+  },
+  "booking": {
+    "arrival_windows": [
+      { "label": "8-11 AM", "start_hour": 8 },
+      { "label": "11 AM-2 PM", "start_hour": 11 },
+      { "label": "2-5 PM", "start_hour": 14 }
+    ],
+    "closed_days": ["Sunday"],
+    "days_ahead": 7,
+    "jobs_per_window": 2
+  },
+  "faqs": [
+    { "q": "What brands do you service?", "a": "All major brands, including Trane, Carrier, Lennox, Goodman, Rheem and Daikin." },
+    { "q": "Are you licensed and insured?", "a": "Yes, licensed by the Texas Department of Licensing and Regulation and fully insured." },
+    { "q": "Do you offer a maintenance plan?", "a": "Yes, the Comfort Club: $15/month, two tune-ups per year, priority scheduling and 15% off repairs." },
+    { "q": "How long does a repair visit take?", "a": "Most repairs take 1-2 hours once the technician arrives." }
+  ],
+  "escalation": {
+    "transfer_phone": "(512) 555-0142"
+  },
+  "webhook_url": ""
+}

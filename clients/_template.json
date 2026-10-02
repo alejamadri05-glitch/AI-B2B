@@ -1,0 +1,50 @@
+{
+  "slug": "REPLACE-with-lowercase-slug",
+  "demo": false,
+  "business_name": "REPLACE Business Name",
+  "agent_name": "Riley",
+  "trade": "REPLACE e.g. plumbing",
+  "city_state": "REPLACE City, ST",
+  "phone": "REPLACE (555) 555-5555",
+  "website": "",
+  "timezone": "America/Chicago",
+  "brand_color": "#1f6feb",
+  "greeting": "Hi! I'm Riley, the virtual assistant for REPLACE Business Name. How can I help you today?",
+  "hours": "REPLACE e.g. Monday-Friday 8 AM-5 PM",
+  "service_area": {
+    "description": "REPLACE cities or counties served",
+    "zip_codes": []
+  },
+  "services": [
+    { "name": "REPLACE service", "description": "REPLACE short description" }
+  ],
+  "pricing": {
+    "diagnostic_fee": "",
+    "after_hours_fee": "",
+    "notes": [
+      "Never quote a repair or installation total in chat."
+    ]
+  },
+  "financing": "",
+  "warranties": "",
+  "emergency": {
+    "available_24_7": false,
+    "examples": "",
+    "on_call_response": "A team member is notified and will call back as soon as possible."
+  },
+  "booking": {
+    "arrival_windows": [
+      { "label": "8-11 AM", "start_hour": 8 },
+      { "label": "11 AM-2 PM", "start_hour": 11 },
+      { "label": "2-5 PM", "start_hour": 14 }
+    ],
+    "closed_days": ["Sunday"],
+    "days_ahead": 7,
+    "jobs_per_window": 2
+  },
+  "faqs": [],
+  "escalation": {
+    "transfer_phone": "REPLACE (555) 555-5555"
+  },
+  "webhook_url": ""
+}

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receptionist Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dash">
+    <h1 id="title">Dashboard</h1>
+    <p class="muted">Everything the AI receptionist captured. Updates every 5 seconds.</p>
+    <div class="stats">
+      <div class="stat"><div class="n" id="n-booking">0</div><div class="label">Jobs booked</div></div>
+      <div class="stat"><div class="n" id="n-lead">0</div><div class="label">Leads captured</div></div>
+      <div class="stat"><div class="n" id="n-escalation">0</div><div class="label">Urgent alerts</div></div>
+    </div>
+    <div class="events" id="events"></div>
+  </main>
+  <script type="module">
+    const params = new URLSearchParams(location.search);
+    const slug = params.get("client") || "demo-hvac";
+    const token = params.get("token") || "";
+    const $ = (id) => document.getElementById(id);
+
+    fetch(`/api/clients/${encodeURIComponent(slug)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => {
+        if (!p) return;
+        $("title").textContent = `${p.business_name} · Receptionist dashboard`;
+        document.documentElement.style.setProperty("--brand", p.brand_color || "#1f6feb");
+      });
+
+    const LABELS = { booking: "Booked job", lead: "Lead", escalation: "Urgent alert" };
+
+    function render(events) {
+      for (const type of Object.keys(LABELS)) {
+        $(`n-${type}`).textContent = events.filter((e) => e.type === type).length;
+      }
+      const list = $("events");
+      list.replaceChildren();
+      if (!events.length) {
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = "Nothing yet. Start a conversation in the chat demo.";
+        list.append(p);
+      }
+      for (const e of events) {
+        const card = document.createElement("article");
+        card.className = "event";
+        const head = document.createElement("div");
+        head.className = "event-head";
+        const tag = document.createElement("span");
+        tag.className = `tag ${e.type}`;
+        tag.textContent = LABELS[e.type] || e.type;
+        const when = document.createElement("span");
+        when.className = "muted";
+        when.style.margin = "0";
+        when.textContent = `#${e.id} · ${new Date(e.at).toLocaleString()} · ${e.channel || "web"}`;
+        head.append(tag, when);
+        const dl = document.createElement("dl");
+        for (const [k, v] of Object.entries(e.data || {})) {
+          if (v === null || v === "") continue;
+          const dt = document.createElement("dt");
+          dt.textContent = k.replaceAll("_", " ");
+          const dd = document.createElement("dd");
+          dd.textContent = String(v);
+          dl.append(dt, dd);
+        }
+        card.append(head, dl);
+        list.append(card);
+      }
+    }
+
+    async function refresh() {
+      const res = await fetch(`/api/events?client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`);
+      if (res.ok) render((await res.json()).events);
+      else $("events").textContent = (await res.json()).error;
+    }
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>
