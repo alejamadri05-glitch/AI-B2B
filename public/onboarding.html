@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Receptionist Setup</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="form-page">
+    <p class="eyebrow">AI receptionist setup</p>
+    <h1 id="title">Tell us about your business</h1>
+    <p class="muted">About 15 minutes. Your assistant will only use what you write here, so be as specific as you can. Your answers are saved in this browser as you type.</p>
+
+    <div class="banner" id="banner" hidden></div>
+    <div class="banner error" id="error-summary" hidden></div>
+
+    <form id="form" novalidate hidden>
+      <fieldset>
+        <legend>1. Business basics</legend>
+        <label>Business name, as customers know it<input name="business_name" required><span class="field-error" data-error="business_name"></span></label>
+        <label>Main trade<input name="trade" placeholder="e.g. HVAC (heating and air conditioning)"><span class="field-error" data-error="trade"></span></label>
+        <div class="row">
+          <label>City and state<input name="city_state" placeholder="Houston, TX"><span class="field-error" data-error="city_state"></span></label>
+          <label>Time zone
+            <select name="timezone">
+              <option value="America/Chicago">Central</option>
+              <option value="America/New_York">Eastern</option>
+              <option value="America/Denver">Mountain</option>
+              <option value="America/Phoenix">Arizona</option>
+              <option value="America/Los_Angeles">Pacific</option>
+            </select><span class="field-error" data-error="timezone"></span>
+          </label>
+        </div>
+        <div class="row">
+          <label>Main phone customers call<input name="phone" type="tel"><span class="field-error" data-error="phone"></span></label>
+          <label>Website<input name="website" type="url" placeholder="https://"></label>
+        </div>
+        <div class="row">
+          <label>Assistant's name<input name="agent_name" placeholder="Riley"></label>
+          <label>Brand color<input name="brand_color" type="color" value="#1f6feb"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Office hours</legend>
+        <p class="hint">When someone at your office answers the phone. Outside these hours, the assistant is your front desk.</p>
+        <div class="hours" id="hours"></div>
+        <span class="field-error" data-error="office_hours"></span>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Service area</legend>
+        <label>Cities or counties you serve<input name="service_area_description" placeholder="Houston, Katy, Sugar Land and Pearland"><span class="field-error" data-error="service_area_description"></span></label>
+        <label>ZIP codes you serve (any format, we'll find the 5-digit codes)<textarea name="zip_codes" rows="3" placeholder="77002, 77003, 77004 …"></textarea></label>
+        <p class="hint">Leave empty to accept any ZIP. A full list keeps techs from driving too far.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Services</legend>
+        <div class="list" id="services"></div>
+        <button type="button" class="secondary" data-add="services">+ Add a service</button>
+        <span class="field-error" data-error="services"></span>
+      </fieldset>
+
+      <fieldset>
+        <legend>5. Prices and policies</legend>
+        <p class="hint">The assistant never quotes repair or installation totals. Only list prices you are happy to share in chat.</p>
+        <div class="row">
+          <label>Service call / diagnostic fee<input name="diagnostic_fee" placeholder="$89, waived if you approve the repair"></label>
+          <label>After-hours or weekend fee<input name="after_hours_fee" placeholder="$150 evenings and Sundays"></label>
+        </div>
+        <label>Other prices it may share (one per line)<textarea name="other_prices" rows="3" placeholder="Tune-up: $119 per system"></textarea></label>
+        <label>Anything it must never say or promise (one per line)<textarea name="never_share" rows="2"></textarea></label>
+        <div class="row">
+          <label>Financing<input name="financing"></label>
+          <label>Warranties and guarantees<input name="warranties"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>6. Emergencies</legend>
+        <label class="check"><input type="checkbox" name="emergency_24_7"> We offer 24/7 emergency service</label>
+        <label>What counts as an emergency for you?<textarea name="emergency_examples" rows="2" placeholder="No AC above 95°F with a baby or elderly person at home, water leaking through the ceiling…"></textarea></label>
+        <label>What happens after the assistant alerts you?<input name="on_call_response" placeholder="The on-call technician calls back within 15 minutes."></label>
+        <div class="row">
+          <label>Cell phone for urgent text alerts<input name="alerts_phone" type="tel"></label>
+          <label>Number to give customers who want a person<input name="transfer_phone" type="tel"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>7. Scheduling</legend>
+        <p class="hint">Arrival windows customers can book, with the hour each one starts (24-hour clock).</p>
+        <div class="list" id="arrival_windows"></div>
+        <button type="button" class="secondary" data-add="arrival_windows">+ Add a window</button>
+        <span class="field-error" data-error="arrival_windows"></span>
+        <p class="hint">Days you don't book regular jobs:</p>
+        <div class="days" id="closed_days"></div>
+        <div class="row">
+          <label>How many days ahead can customers book?<input name="days_ahead" type="number" min="1" max="30" value="7"><span class="field-error" data-error="days_ahead"></span></label>
+          <label>Max jobs per window (about your number of techs)<input name="jobs_per_window" type="number" min="1" max="50" value="2"><span class="field-error" data-error="jobs_per_window"></span></label>
+        </div>
+        <label>Scheduling software you use<input name="scheduling_software" placeholder="Housecall Pro, Jobber, ServiceTitan, Google Calendar, paper…"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>8. Frequent questions</legend>
+        <p class="hint">The 5–10 questions your office gets most, with your answers.</p>
+        <div class="list" id="faqs"></div>
+        <button type="button" class="secondary" data-add="faqs">+ Add a question</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>9. Notifications and reporting</legend>
+        <div class="row">
+          <label>Email for new bookings and leads<input name="alerts_email" type="email"></label>
+          <label>Email for the monthly report<input name="report_email" type="email"><span class="field-error" data-error="report_email"></span></label>
+        </div>
+        <label>Average ticket for a service visit, in dollars (used to estimate revenue in your report)<input name="avg_ticket" type="number" min="0" step="1" placeholder="350"><span class="field-error" data-error="avg_ticket"></span></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>10. Confirmation</legend>
+        <div class="row">
+          <label>Your name<input name="consent_name"><span class="field-error" data-error="consent_name"></span></label>
+          <label>Your title<input name="consent_title" placeholder="Owner"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="consent"> I confirm this information is accurate and authorize the AI assistant to answer our customers using it. I understand it does not replace 911 or emergency services.</label>
+        <span class="field-error" data-error="consent"></span>
+      </fieldset>
+
+      <button type="submit" class="primary" id="submit">Submit</button>
+    </form>
+  </main>
+  <script src="/onboarding.js" type="module"></script>
+</body>
+</html>

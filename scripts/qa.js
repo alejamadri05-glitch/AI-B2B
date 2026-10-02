@@ -2,6 +2,7 @@
 //
 //   npm run qa -- --client demo-hvac
 //   npm run qa -- --client demo-hvac --only gas-smell,book-visit
+//   node scripts/qa.js --config-file draft.json --out report.json   (used by onboarding)
 //
 // Bookings and leads go to a temporary folder and webhooks are switched off,
 // so the client never sees test data. Exits with code 1 if anything fails.
@@ -19,9 +20,9 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const config = loadClientConfig(args.client);
+const config = args["config-file"] ? JSON.parse(fs.readFileSync(args["config-file"], "utf8")) : loadClientConfig(args.client);
 if (!config) {
-  console.error("Usage: npm run qa -- --client <slug> [--only id1,id2] [--concurrency 3]");
+  console.error("Usage: npm run qa -- --client <slug> | --config-file <file>  [--only id1,id2] [--concurrency 3] [--out report.json]");
   process.exit(1);
 }
 
@@ -50,8 +51,8 @@ await Promise.all(
   }),
 );
 
-fs.mkdirSync(reportDir, { recursive: true });
-const reportFile = path.join(reportDir, `${config.slug}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+const reportFile = args.out ?? path.join(reportDir, `${config.slug}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+fs.mkdirSync(path.dirname(reportFile), { recursive: true });
 const ordered = scenarios.map((s) => results.find((r) => r.id === s.id));
 fs.writeFileSync(reportFile, JSON.stringify({ client: config.slug, at: new Date().toISOString(), results: ordered }, null, 2));
 

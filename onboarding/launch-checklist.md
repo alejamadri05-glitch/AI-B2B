@@ -1,6 +1,6 @@
 # Checklist antes de lanzar un cliente
 
-Haz esta revisión con el archivo `clients/<slug>.json` ya lleno y el servidor corriendo. Ningún bot sale en vivo sin pasar todo.
+Con el onboarding automático, las conversaciones de prueba ya corren solas y sus resultados aparecen en tu página de revisión. Usa esta lista para leer esos resultados y para lo que no se prueba solo (datos, instalación). Ningún bot sale en vivo sin pasar todo.
 
 ## Datos
 - [ ] Nombre, teléfono, horario, servicios y área de servicio coinciden con lo que el cliente aprobó en el formulario.

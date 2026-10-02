@@ -7,16 +7,14 @@
 // { to, subject, html } to REPORT_WEBHOOK_URL (an n8n flow that sends the email).
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT_DIR, loadClientConfig } from "../src/store.js";
+import { ROOT_DIR, listClientSlugs, loadClientConfig } from "../src/store.js";
 import { buildReport, previousMonth } from "../src/report.js";
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(`--${name}`);
 const value = (name) => argv[argv.indexOf(`--${name}`) + 1];
 
-const slugs = flag("all")
-  ? fs.readdirSync(path.join(ROOT_DIR, "clients")).filter((f) => f.endsWith(".json") && !f.startsWith("_")).map((f) => f.slice(0, -5))
-  : [value("client")];
+const slugs = flag("all") ? listClientSlugs() : [value("client")];
 const configs = slugs.map(loadClientConfig).filter(Boolean).filter((c) => !c.demo || !flag("all"));
 if (!configs.length) {
   console.error("Usage: npm run report -- --client <slug> | --all  [--month YYYY-MM] [--no-ai] [--send]");

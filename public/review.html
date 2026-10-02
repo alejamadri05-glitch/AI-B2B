@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revisión de Cliente</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="form-page">
+    <p class="eyebrow">Revisión antes de publicar</p>
+    <h1 id="title">Cargando…</h1>
+    <p class="muted" id="status-line"></p>
+    <div class="banner error" id="error" hidden></div>
+
+    <section id="qa-section" hidden>
+      <h2>Pruebas automáticas</h2>
+      <div class="stats">
+        <div class="stat"><div class="n" id="qa-score">–</div><div class="label">Escenarios que pasan</div></div>
+      </div>
+      <div class="events" id="qa-list"></div>
+    </section>
+
+    <section id="config-section" hidden>
+      <h2>Lo que el bot va a usar</h2>
+      <dl class="summary" id="summary"></dl>
+      <details class="event"><summary>Ver la configuración completa (JSON)</summary><pre id="config-json"></pre></details>
+    </section>
+
+    <section id="actions" hidden>
+      <h2>Decisión</h2>
+      <p class="muted" id="actions-hint"></p>
+      <div class="actions">
+        <button type="button" class="primary" id="publish">Publicar</button>
+        <button type="button" class="secondary" id="retest">Repetir pruebas</button>
+      </div>
+      <label>Pedir cambios al cliente (se le envía este texto con el enlace del formulario)
+        <textarea id="note" rows="3" placeholder="Please add your ZIP codes and the price of a tune-up."></textarea>
+      </label>
+      <button type="button" class="secondary" id="changes">Enviar pedido de cambios</button>
+    </section>
+
+    <section id="live-section" hidden>
+      <h2>Publicado</h2>
+      <p>Código para el sitio del cliente:</p>
+      <pre id="widget-code"></pre>
+      <p>Panel del cliente: <a id="dashboard-link" target="_blank" rel="noopener"></a></p>
+      <p class="muted">Si configuraste el webhook de onboarding, n8n ya le mandó estos datos al cliente.</p>
+    </section>
+  </main>
+  <script type="module">
+    const params = new URLSearchParams(location.search);
+    const invite = params.get("invite") || "";
+    const key = params.get("key") || "";
+    const $ = (id) => document.getElementById(id);
+    const api = (action = "review", init) =>
+      fetch(`/api/onboarding/${encodeURIComponent(invite)}/${action}?key=${encodeURIComponent(key)}`, init);
+    const STATUS = {
+      prefilling: "Leyendo el sitio web del cliente para prellenar el formulario.",
+      open: "Esperando que el cliente llene el formulario.",
+      changes_requested: "Le pediste cambios al cliente. Esperando que vuelva a enviar el formulario.",
+      testing: "Corriendo las pruebas automáticas (2–5 minutos). Esta página se actualiza sola.",
+      review: "Listo para tu revisión.",
+      live: "Publicado y en vivo.",
+    };
+    let timer;
+
+    function row(dl, label, value) {
+      if (value === undefined || value === null || value === "" || (Array.isArray(value) && !value.length)) return;
+      const dt = document.createElement("dt");
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.textContent = Array.isArray(value) ? value.join(" · ") : String(value);
+      dl.append(dt, dd);
+    }
+
+    function render(data) {
+      $("title").textContent = data.business_name;
+      $("status-line").textContent = STATUS[data.status] ?? data.status;
+      const c = data.config;
+      $("config-section").hidden = !c;
+      if (c) {
+        const dl = $("summary");
+        dl.replaceChildren();
+        row(dl, "Teléfono", c.phone);
+        row(dl, "Horario", c.hours);
+        row(dl, "Área", `${c.service_area.description}${c.service_area.zip_codes.length ? ` (${c.service_area.zip_codes.length} ZIPs)` : " (acepta cualquier ZIP)"}`);
+        row(dl, "Servicios", c.services.map((s) => s.name));
+        row(dl, "Visita diagnóstica", c.pricing.diagnostic_fee);
+        row(dl, "Otros precios", c.pricing.other_prices);
+        row(dl, "Emergencias 24/7", c.emergency.available_24_7 ? "Sí" : "No");
+        row(dl, "Ventanas", c.booking.arrival_windows.map((w) => w.label));
+        row(dl, "Días cerrados", c.booking.closed_days);
+        row(dl, "Preguntas frecuentes", `${c.faqs.length}`);
+        row(dl, "Reporte mensual", `${c.report.email}${c.report.avg_ticket ? ` · ticket $${c.report.avg_ticket}` : ""}`);
+        row(dl, "Agenda que usa", c._onboarding?.scheduling_software);
+        row(dl, "Alertas SMS", c._onboarding?.alerts_phone);
+        row(dl, "Aprobó", c._onboarding?.consent ? `${c._onboarding.consent.name} (${c._onboarding.consent.title || "sin cargo"})` : "");
+        $("config-json").textContent = JSON.stringify(c, null, 2);
+      }
+
+      const qa = data.qa;
+      $("qa-section").hidden = !qa;
+      if (qa) {
+        $("qa-score").textContent = qa.error ? "error" : `${qa.passed}/${qa.total}`;
+        const list = $("qa-list");
+        list.replaceChildren();
+        if (qa.error) {
+          const p = document.createElement("p");
+          p.className = "field-error";
+          p.textContent = `Las pruebas no corrieron: ${qa.error}`;
+          list.append(p);
+        }
+        for (const r of data.qa_results ?? []) {
+          const d = document.createElement("details");
+          d.className = "event";
+          d.open = !r.pass;
+          const s = document.createElement("summary");
+          s.innerHTML = `<span class="tag ${r.pass ? "booking" : "escalation"}"></span> `;
+          s.firstChild.textContent = r.pass ? "Pasa" : "Falla";
+          s.append(` ${r.title}`);
+          d.append(s);
+          const reason = document.createElement("p");
+          reason.className = "muted";
+          reason.textContent = [r.grade?.reason, ...r.checks.filter((c) => !c.ok).map((c) => `✗ ${c.what}`)].filter(Boolean).join(" ");
+          d.append(reason);
+          const thread = document.createElement("div");
+          thread.className = "thread";
+          for (const m of r.transcript) {
+            const b = document.createElement("div");
+            b.className = `msg ${m.role === "customer" ? "out" : "in"}`;
+            b.textContent = m.text;
+            thread.append(b);
+          }
+          d.append(thread);
+          list.append(d);
+        }
+      }
+
+      $("actions").hidden = data.status !== "review";
+      if (data.status === "review") {
+        const failed = qa && !qa.error ? qa.total - qa.passed : 0;
+        $("actions-hint").textContent = qa?.error
+          ? "Las pruebas no corrieron. Repítelas antes de publicar."
+          : failed
+            ? `${failed} escenario(s) fallan. Revisa la conversación: si es un error del bot, corrige el prompt o pide cambios; si el calificador se equivocó, puedes publicar.`
+            : "Todo pasa. Lee el resumen de arriba y publica.";
+      }
+      $("live-section").hidden = data.status !== "live";
+      if (data.status === "live") {
+        $("widget-code").textContent = data.links.widget;
+        $("dashboard-link").href = data.links.dashboard;
+        $("dashboard-link").textContent = data.links.dashboard;
+      }
+      clearTimeout(timer);
+      if (["testing", "prefilling", "open", "changes_requested"].includes(data.status)) timer = setTimeout(load, 5000);
+    }
+
+    async function load() {
+      const res = await api();
+      const data = await res.json();
+      if (!res.ok) {
+        $("error").textContent = data.error;
+        $("error").hidden = false;
+        return;
+      }
+      render(data);
+    }
+
+    async function act(action, body) {
+      $("error").hidden = true;
+      for (const b of document.querySelectorAll("#actions button")) b.disabled = true;
+      const res = await api(action, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
+      const data = await res.json();
+      for (const b of document.querySelectorAll("#actions button")) b.disabled = false;
+      if (!res.ok) {
+        $("error").textContent = data.error;
+        $("error").hidden = false;
+        return;
+      }
+      load();
+    }
+
+    $("publish").addEventListener("click", () => {
+      if (confirm("¿Publicar el asistente? Quedará en vivo con esta configuración.")) act("publish");
+    });
+    $("retest").addEventListener("click", () => act("retest"));
+    $("changes").addEventListener("click", () => act("changes", { note: $("note").value }));
+    load();
+  </script>
+</body>
+</html>

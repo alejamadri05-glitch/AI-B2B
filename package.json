@@ -14,7 +14,8 @@
     "test": "node --test",
     "prospects": "node scripts/prospects.js",
     "qa": "node scripts/qa.js",
-    "report": "node scripts/report.js"
+    "report": "node scripts/report.js",
+    "onboard": "node scripts/onboard.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

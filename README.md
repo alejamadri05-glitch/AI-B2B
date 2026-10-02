@@ -27,6 +27,7 @@ scripts/new-prospect.js   Genera la demo de un prospecto a partir de su sitio we
 scripts/prospects.js      Pipeline de prospección: Outscraper → ranking → contactos → primera línea → demos → CSV
 scripts/qa.js             Pruebas automáticas del bot con clientes simulados (checklist de lanzamiento)
 scripts/report.js         Reporte mensual por cliente (HTML para el dueño + sugerencias internas)
+scripts/onboard.js        Crea invitaciones de onboarding y lista su estado
 onboarding/         Formulario para el cliente (inglés) y checklist de lanzamiento (español)
 test/               Pruebas con un cliente simulado (no gastan API)
 ```
@@ -51,6 +52,9 @@ Variables de entorno opcionales:
 | `MODEL` | Modelo de Claude (por defecto `claude-opus-5-5`) |
 | `EFFORT` | Esfuerzo de razonamiento: `low` (por defecto) o `medium` si las respuestas se quedan cortas |
 | `ADMIN_TOKEN` | Tu llave maestra: ve el panel de todos los clientes y el reporte. `dashboard.html?client=...&token=...` |
+| `PUBLIC_URL` | URL pública del servidor, para los enlaces de demos, formularios y revisión |
+| `CLIENTS_DIR` | Carpeta persistente donde se guardan los clientes publicados (en producción, un disco que no se borre) |
+| `ONBOARDING_WEBHOOK_URL` | Webhook de n8n que recibe los eventos del onboarding y manda los correos |
 | `REPORT_WEBHOOK_URL` | Webhook de n8n que envía el reporte mensual por correo (para `npm run report -- --send`) |
 | `WEBHOOK_URL` | Webhook global para eventos. Cada cliente puede tener el suyo en `webhook_url` |
 | `DATA_DIR` | Carpeta donde se guardan los eventos (por defecto `data/`) |
@@ -125,9 +129,32 @@ Las sugerencias internas en español se imprimen en la consola y quedan en el `.
 
 Para ver el correo en el navegador, agrega `&format=html` a la URL.
 
+## Onboarding automático
+
+Del pago a "en vivo" sin configurar nada a mano:
+
+1. **Invitación.** `npm run onboard -- --business "Bayou Plumbing" --email owner@bayou.com --website https://bayou.com`. También puede hacerla n8n después del pago, con `POST /api/admin/invites` y `Authorization: Bearer <ADMIN_TOKEN>`. Si hay sitio web, Claude prellena el formulario.
+2. **El cliente llena el formulario** (`/onboarding.html?invite=…`, en inglés). Son 10 secciones con validación y autoguardado en su navegador.
+3. **Pruebas automáticas.** Al enviar, se arma la configuración y corren los 11 escenarios de `npm run qa` en un proceso aparte, sin tocar datos reales. Cada corrida cuesta unas 11 conversaciones de Claude.
+4. **Tu revisión** (`/review.html?invite=…&key=…`, en español). Ves los resultados con cada conversación, el resumen de la configuración, y tres botones: **Publicar**, **Repetir pruebas** o **Pedir cambios** (el cliente recibe tu nota y el formulario se reabre).
+5. **Publicar** guarda el cliente en `CLIENTS_DIR`, le crea su `dashboard_token` y envía el evento `live` con el código del widget y el enlace al panel.
+
+Estados: `prefilling → open → testing → review → live`, con `changes_requested` de vuelta a `open`. `npm run onboard -- --list` muestra todos con su enlace de revisión.
+
+**Eventos al webhook** (`ONBOARDING_WEBHOOK_URL`). Todos traen `type`, `slug`, `business_name`, `contact_email` y `links` (`form`, `review`, `dashboard`, `widget`):
+
+| `type` | A quién debería avisar n8n | Qué usar |
+|---|---|---|
+| `submitted` | A ti | Aviso de que el cliente envió el formulario |
+| `ready_for_review` | A ti | `qa.passed`/`qa.total` y `links.review` |
+| `changes_requested` | Al cliente | `note` y `links.form` |
+| `live` | Al cliente (con copia para ti) | `links.widget` para pegar en su sitio y `links.dashboard` |
+
+El enlace de revisión lleva una clave secreta: no lo reenvíes al cliente.
+
 ## Instalar en un cliente
 
-1. Llena `clients/<slug>.json` con el [formulario de onboarding](onboarding/intake-form.md).
+1. Usa el onboarding automático (arriba). O, a mano, llena `clients/<slug>.json` con las preguntas de [onboarding/intake-form.md](onboarding/intake-form.md).
 2. Corre `npm run qa -- --client <slug>` y revisa el [checklist de lanzamiento](onboarding/launch-checklist.md).
 3. Pega una línea en el sitio del cliente:
    ```html

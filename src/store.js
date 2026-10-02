@@ -7,9 +7,22 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT_DIR = path.resolve(here, "..");
-const CLIENTS_DIR = path.join(ROOT_DIR, "clients");
+// Demo and template configs ship with the repo (clients/). Clients published
+// through onboarding go to CLIENTS_DIR, which should be a persistent disk in
+// production; it is checked first.
+const REPO_CLIENTS_DIR = path.join(ROOT_DIR, "clients");
 
-function dataDir() {
+export function liveClientsDir() {
+  const dir = process.env.CLIENTS_DIR || REPO_CLIENTS_DIR;
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function clientDirs() {
+  return [...new Set([liveClientsDir(), REPO_CLIENTS_DIR])];
+}
+
+export function dataDir() {
   const dir = process.env.DATA_DIR || path.join(ROOT_DIR, "data");
   fs.mkdirSync(dir, { recursive: true });
   return dir;
@@ -23,9 +36,18 @@ export function isValidSlug(slug) {
 
 export function loadClientConfig(slug) {
   if (!isValidSlug(slug)) return null;
-  const file = path.join(CLIENTS_DIR, `${slug}.json`);
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, "utf8"));
+  for (const dir of clientDirs()) {
+    const file = path.join(dir, `${slug}.json`);
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
+  }
+  return null;
+}
+
+export function listClientSlugs() {
+  const slugs = clientDirs().flatMap((dir) =>
+    fs.readdirSync(dir).filter((f) => f.endsWith(".json") && !f.startsWith("_")).map((f) => f.slice(0, -5)),
+  );
+  return [...new Set(slugs)].filter(isValidSlug);
 }
 
 export function appendEvent(slug, event) {

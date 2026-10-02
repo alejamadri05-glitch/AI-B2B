@@ -6,13 +6,19 @@
 //   GET  /api/events?client=...     events for the dashboard (token: ADMIN_TOKEN or the client's dashboard_token)
 //   GET  /api/conversations?client=... conversation log for the dashboard (same token)
 //   GET  /api/report?client=...&month=YYYY-MM  monthly report { to, subject, html, metrics } (ADMIN_TOKEN)
+//   POST /api/admin/invites         { business_name, contact_email?, website? } -> onboarding links (ADMIN_TOKEN)
+//   GET|POST /api/onboarding/<invite>             the client's onboarding form
+//   GET  /api/onboarding/<invite>/review?key=...  config + QA results for your review
+//   POST /api/onboarding/<invite>/{publish|changes|retest}?key=...
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { runTurn, MODEL } from "./agent.js";
-import { ROOT_DIR, appendMessage, isValidSlug, loadClientConfig, readConversations, readEvents } from "./store.js";
+import { ROOT_DIR, appendMessage, dataDir, isValidSlug, loadClientConfig, readConversations, readEvents } from "./store.js";
 import { buildReport, previousMonth } from "./report.js";
+import { extractProfile } from "./demo-builder.js";
+import * as onboarding from "./onboarding.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
@@ -137,6 +143,48 @@ function publicProfile(config) {
   return { slug, business_name, agent_name, greeting, phone, brand_color, demo: Boolean(demo) };
 }
 
+function isAdmin(req, url) {
+  if (!ADMIN_TOKEN) return true;
+  const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  return (bearer || url.searchParams.get("token")) === ADMIN_TOKEN;
+}
+
+const ONBOARDING_RE = /^\/api\/onboarding\/([\w-]{20,40})(?:\/(review|publish|changes|retest))?$/;
+
+async function handleOnboarding(req, res, url, tok, action) {
+  const key = url.searchParams.get("key");
+  const reply = (r) => (r.status === 200 ? send(res, 200, onboarding.reviewInvite(r.invite)) : send(res, r.status, { error: r.error, errors: r.errors }));
+
+  if (!action && req.method === "GET") {
+    const invite = onboarding.loadInvite(tok);
+    return invite ? send(res, 200, onboarding.publicInvite(invite)) : send(res, 404, { error: "Invite not found" });
+  }
+  if (!action && req.method === "POST") {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.socket.remoteAddress;
+    if (rateLimited(ip)) throw new HttpError(429, "Too many requests. Please wait a few minutes.");
+    const result = await onboarding.submitForm(tok, await readJson(req, 128 * 1024));
+    if (result.status !== 200) return send(res, result.status, { error: result.error ?? "Please fix the highlighted fields", errors: result.errors });
+    return send(res, 200, { ok: true, status: result.invite.status });
+  }
+  if (action === "review" && req.method === "GET") {
+    const invite = onboarding.loadInvite(tok);
+    if (!onboarding.checkKey(invite, key)) throw new HttpError(401, "Invalid review link");
+    const reportPath = invite.qa?.report_file ? path.join(dataDir(), invite.qa.report_file) : null;
+    const qaResults = reportPath && fs.existsSync(reportPath) ? JSON.parse(fs.readFileSync(reportPath, "utf8")).results : [];
+    return send(res, 200, { ...onboarding.reviewInvite(invite), qa_results: qaResults });
+  }
+  if (req.method === "POST" && action === "publish") return reply(await onboarding.publish(tok, key));
+  if (req.method === "POST" && action === "changes") return reply(await onboarding.requestChanges(tok, key, (await readJson(req)).note));
+  if (req.method === "POST" && action === "retest") return reply(await onboarding.retest(tok, key));
+  throw new HttpError(405, "Method not allowed");
+}
+
+async function prefillFromWebsite(website) {
+  const profile = await extractProfile(website);
+  if (!profile) throw new Error("Could not read the website");
+  return onboarding.profileToForm(profile);
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   try {
@@ -158,6 +206,21 @@ const server = http.createServer(async (req, res) => {
       if (!canView(url, config)) throw new HttpError(401, "Invalid token");
       return send(res, 200, { conversations: readConversations(config.slug).slice(0, 200) });
     }
+
+    if (req.method === "POST" && url.pathname === "/api/admin/invites") {
+      if (!isAdmin(req, url)) throw new HttpError(401, "Invalid token");
+      const body = await readJson(req);
+      let invite;
+      try {
+        ({ invite } = onboarding.createInvite(body, { prefill: body.prefill === false ? null : prefillFromWebsite }));
+      } catch (err) {
+        throw new HttpError(400, err.message);
+      }
+      return send(res, 200, onboarding.reviewInvite(invite));
+    }
+
+    const match = url.pathname.match(ONBOARDING_RE);
+    if (match) return await handleOnboarding(req, res, url, match[1], match[2]);
 
     if (req.method === "GET" && url.pathname === "/api/report") {
       const config = clientFromQuery(url);
