@@ -24,6 +24,8 @@ src/
   server.js         Servidor HTTP: demo, widget, API de chat, panel
 public/             Página de demo, widget para instalar y panel de leads
 scripts/new-prospect.js   Genera la demo de un prospecto a partir de su sitio web
+scripts/prospects.js      Pipeline de prospección: Outscraper → ranking → contactos → primera línea → demos → CSV
+scripts/qa.js             Pruebas automáticas del bot con clientes simulados (checklist de lanzamiento)
 onboarding/         Formulario para el cliente (inglés) y checklist de lanzamiento (español)
 test/               Pruebas con un cliente simulado (no gastan API)
 ```
@@ -63,10 +65,40 @@ Cada llamada a la API imprime en la consola los tokens usados (`in`, `cache_read
 2. En el correo o en la llamada: *"I built a demo of your receptionist, trained on your website: [link]. Try asking it to book a repair."*
 3. En la llamada, abre el chat y el panel lado a lado. Agenda una cita y deja que el prospecto vea cómo aparece en el panel al instante. Ese es el momento que vende.
 
+## Prospección automática
+
+```bash
+# 1. Gratis: califica la exportación de Outscraper (.xlsx, .csv o .json de la API)
+npm run prospects -- --input outscraper.xlsx --batch houston-oct
+
+# 2. Con costo: contactos y reseñas (Outscraper), primera línea (Claude) y demo para los 40 mejores
+export OUTSCRAPER_API_KEY=...  ANTHROPIC_API_KEY=...  PUBLIC_URL=https://tu-servidor
+npm run prospects -- --input outscraper.xlsx --batch houston-oct --top 40 --enrich --personalize --demos
+```
+
+Resultado en `data/prospects/<batch>/`:
+- `revision.csv`: todos los negocios con prioridad, puntaje, motivos, correo, primera línea, citas de reseñas y demo. Revísalo antes de enviar.
+- `instantly.csv`: los prospectos listos, con columnas `first_name`, `company_name`, `city`, `personalization` y `demo_link` para usarlas como variables en Instantly. Cuando no hay nombre, configura el texto de respaldo "there".
+
+Cómo califica: nicho (HVAC y plomería primero), tamaño (20–400 reseñas), sitio web, horario de 24 horas, señales de clientela hispana y quejas de 1 estrella. Excluye franquicias, empresas con más de 1,500 reseñas, negocios fuera de Houston y San Antonio y categorías fuera del nicho. Cada punto aparece explicado en la columna `motivos`.
+
+Los resultados con costo se guardan en `leads.json`. Si vuelves a correr el mismo `--batch`, no se paga dos veces. Las citas de reseñas que Claude devuelve se verifican contra el texto original y se descartan si no aparecen tal cual.
+
+## Pruebas automáticas del bot
+
+```bash
+npm run qa -- --client demo-hvac
+npm run qa -- --client demo-hvac --only gas-smell,book-visit
+```
+
+Un cliente simulado por Claude conversa con el bot en 11 escenarios: agendar, ZIP fuera del área, precio de equipo nuevo, olor a gas, emergencia, "¿eres humano?", queja, número de tarjeta, intento de manipulación, cliente en español y día cerrado. Para cada uno se verifica que el bot haya creado (o no) la cita, el lead o la alerta, y otro modelo califica la conversación con una rúbrica. Las citas de prueba van a una carpeta temporal y el webhook del cliente se desactiva. El reporte completo queda en `data/qa/`, y el comando termina con error si algo falla.
+
+Córrelo antes de cada lanzamiento y cada vez que cambies `src/prompt.js`.
+
 ## Instalar en un cliente
 
 1. Llena `clients/<slug>.json` con el [formulario de onboarding](onboarding/intake-form.md).
-2. Pasa el [checklist de lanzamiento](onboarding/launch-checklist.md).
+2. Corre `npm run qa -- --client <slug>` y revisa el [checklist de lanzamiento](onboarding/launch-checklist.md).
 3. Pega una línea en el sitio del cliente:
    ```html
    <script src="https://TU-SERVIDOR/widget.js" data-client="slug" data-color="#1f6feb" defer></script>

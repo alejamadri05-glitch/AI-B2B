@@ -11,9 +11,12 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "new-prospect": "node scripts/new-prospect.js",
-    "test": "node --test"
+    "test": "node --test",
+    "prospects": "node scripts/prospects.js",
+    "qa": "node scripts/qa.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0"
+    "@anthropic-ai/sdk": "^0.131.0",
+    "read-excel-file": "^9.3.10"
   }
 }

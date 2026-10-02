@@ -1,3 +1,5 @@
 node_modules/
 data/*.jsonl
 .env
+data/prospects/
+data/qa/
