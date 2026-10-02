@@ -11,12 +11,39 @@
   "brand_color": "#1f6feb",
   "greeting": "Hi! I'm Riley, the virtual assistant for REPLACE Business Name. How can I help you today?",
   "hours": "REPLACE e.g. Monday-Friday 8 AM-5 PM",
+  "office_hours": {
+    "Monday": [
+      "08:00",
+      "17:00"
+    ],
+    "Tuesday": [
+      "08:00",
+      "17:00"
+    ],
+    "Wednesday": [
+      "08:00",
+      "17:00"
+    ],
+    "Thursday": [
+      "08:00",
+      "17:00"
+    ],
+    "Friday": [
+      "08:00",
+      "17:00"
+    ],
+    "Saturday": null,
+    "Sunday": null
+  },
   "service_area": {
     "description": "REPLACE cities or counties served",
     "zip_codes": []
   },
   "services": [
-    { "name": "REPLACE service", "description": "REPLACE short description" }
+    {
+      "name": "REPLACE service",
+      "description": "REPLACE short description"
+    }
   ],
   "pricing": {
     "diagnostic_fee": "",
@@ -34,11 +61,22 @@
   },
   "booking": {
     "arrival_windows": [
-      { "label": "8-11 AM", "start_hour": 8 },
-      { "label": "11 AM-2 PM", "start_hour": 11 },
-      { "label": "2-5 PM", "start_hour": 14 }
+      {
+        "label": "8-11 AM",
+        "start_hour": 8
+      },
+      {
+        "label": "11 AM-2 PM",
+        "start_hour": 11
+      },
+      {
+        "label": "2-5 PM",
+        "start_hour": 14
+      }
     ],
-    "closed_days": ["Sunday"],
+    "closed_days": [
+      "Sunday"
+    ],
     "days_ahead": 7,
     "jobs_per_window": 2
   },
@@ -46,5 +84,10 @@
   "escalation": {
     "transfer_phone": "REPLACE (555) 555-5555"
   },
-  "webhook_url": ""
+  "webhook_url": "",
+  "report": {
+    "email": "REPLACE owner@example.com",
+    "avg_ticket": 0
+  },
+  "dashboard_token": ""
 }

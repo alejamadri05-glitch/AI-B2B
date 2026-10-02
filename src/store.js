@@ -35,7 +35,36 @@ export function appendEvent(slug, event) {
 }
 
 export function readEvents(slug) {
-  const file = path.join(dataDir(), `${slug}.jsonl`);
+  return readJsonl(path.join(dataDir(), `${slug}.jsonl`));
+}
+
+// Conversation log: one line per message in data/<slug>.messages.jsonl.
+// Holds customers' names and phone numbers: keep data/ private and out of git.
+export function appendMessage(slug, message) {
+  const record = { at: new Date().toISOString(), ...message };
+  fs.appendFileSync(path.join(dataDir(), `${slug}.messages.jsonl`), JSON.stringify(record) + "\n");
+  return record;
+}
+
+export function readMessages(slug) {
+  return readJsonl(path.join(dataDir(), `${slug}.messages.jsonl`));
+}
+
+// Groups messages by session: [{ session_id, channel, started_at, last_at, messages }], newest first.
+export function readConversations(slug) {
+  const bySession = new Map();
+  for (const m of readMessages(slug)) {
+    if (!bySession.has(m.session_id)) {
+      bySession.set(m.session_id, { session_id: m.session_id, channel: m.channel, started_at: m.at, last_at: m.at, messages: [] });
+    }
+    const c = bySession.get(m.session_id);
+    c.last_at = m.at;
+    c.messages.push({ at: m.at, role: m.role, text: m.text, ...(m.error ? { error: true } : {}) });
+  }
+  return [...bySession.values()].sort((a, b) => b.last_at.localeCompare(a.last_at));
+}
+
+function readJsonl(file) {
   if (!fs.existsSync(file)) return [];
   return fs
     .readFileSync(file, "utf8")

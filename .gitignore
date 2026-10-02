@@ -3,3 +3,4 @@ data/*.jsonl
 .env
 data/prospects/
 data/qa/
+data/reports/

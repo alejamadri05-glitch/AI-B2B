@@ -23,5 +23,6 @@ Haz esta revisión con el archivo `clients/<slug>.json` ya lleno y el servidor c
 
 ## Instalación
 - [ ] El widget está instalado en el sitio del cliente (`<script src=".../widget.js" data-client="slug" defer></script>`) y abre bien en móvil.
-- [ ] `ADMIN_TOKEN` está configurado y el cliente recibió su enlace al panel.
+- [ ] `ADMIN_TOKEN` está configurado en el servidor, y el cliente tiene su propio `dashboard_token` y su enlace al panel.
+- [ ] `report.email`, `report.avg_ticket` y `office_hours` están llenos, y el cliente está en el flujo mensual de n8n.
 - [ ] El cliente sabe cómo pedir cambios (horario, precios, días cerrados).

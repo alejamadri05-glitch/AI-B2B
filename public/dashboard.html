@@ -15,7 +15,12 @@
       <div class="stat"><div class="n" id="n-lead">0</div><div class="label">Leads captured</div></div>
       <div class="stat"><div class="n" id="n-escalation">0</div><div class="label">Urgent alerts</div></div>
     </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-events" aria-selected="true">Actions</button>
+      <button type="button" role="tab" id="tab-conversations" aria-selected="false">Conversations</button>
+    </div>
     <div class="events" id="events"></div>
+    <div class="events" id="conversations" hidden></div>
   </main>
   <script type="module">
     const params = new URLSearchParams(location.search);
@@ -72,10 +77,53 @@
       }
     }
 
+    function renderConversations(conversations) {
+      const list = $("conversations");
+      const open = new Set([...list.querySelectorAll("details[open]")].map((d) => d.dataset.id));
+      list.replaceChildren();
+      if (!conversations.length) {
+        const p = document.createElement("p");
+        p.className = "muted";
+        p.textContent = "No conversations yet.";
+        list.append(p);
+      }
+      for (const c of conversations) {
+        const details = document.createElement("details");
+        details.className = "event";
+        details.dataset.id = c.session_id;
+        details.open = open.has(c.session_id);
+        const summary = document.createElement("summary");
+        const first = c.messages.find((m) => m.role === "customer");
+        summary.textContent = `${new Date(c.started_at).toLocaleString()} · ${c.channel} · ${c.messages.length} messages — ${first ? first.text.slice(0, 80) : ""}`;
+        details.append(summary);
+        const thread = document.createElement("div");
+        thread.className = "thread";
+        for (const m of c.messages) {
+          const bubble = document.createElement("div");
+          bubble.className = `msg ${m.role === "customer" ? "out" : "in"}${m.error ? " error" : ""}`;
+          bubble.textContent = m.text;
+          thread.append(bubble);
+        }
+        details.append(thread);
+        list.append(details);
+      }
+    }
+
     async function refresh() {
-      const res = await fetch(`/api/events?client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`);
-      if (res.ok) render((await res.json()).events);
-      else $("events").textContent = (await res.json()).error;
+      const q = `client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
+      const [events, conversations] = await Promise.all([fetch(`/api/events?${q}`), fetch(`/api/conversations?${q}`)]);
+      if (events.ok) render((await events.json()).events);
+      else $("events").textContent = (await events.json()).error;
+      if (conversations.ok) renderConversations((await conversations.json()).conversations);
+    }
+
+    for (const [tab, panel] of [["tab-events", "events"], ["tab-conversations", "conversations"]]) {
+      $(tab).addEventListener("click", () => {
+        for (const [t, p] of [["tab-events", "events"], ["tab-conversations", "conversations"]]) {
+          $(t).setAttribute("aria-selected", String(t === tab));
+          $(p).hidden = p !== panel;
+        }
+      });
     }
     refresh();
     setInterval(refresh, 5000);

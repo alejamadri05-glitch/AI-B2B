@@ -124,6 +124,7 @@ export function profileToConfig(profile, slug, url) {
     emergency: { ...template.emergency, available_24_7: profile.emergency_service_24_7 },
     faqs: profile.faqs,
     escalation: { transfer_phone: profile.phone ?? "" },
+    report: { email: "", avg_ticket: 0 },
     _review_before_demo: profile.review_notes,
   };
 }

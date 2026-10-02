@@ -26,6 +26,7 @@ public/             Página de demo, widget para instalar y panel de leads
 scripts/new-prospect.js   Genera la demo de un prospecto a partir de su sitio web
 scripts/prospects.js      Pipeline de prospección: Outscraper → ranking → contactos → primera línea → demos → CSV
 scripts/qa.js             Pruebas automáticas del bot con clientes simulados (checklist de lanzamiento)
+scripts/report.js         Reporte mensual por cliente (HTML para el dueño + sugerencias internas)
 onboarding/         Formulario para el cliente (inglés) y checklist de lanzamiento (español)
 test/               Pruebas con un cliente simulado (no gastan API)
 ```
@@ -49,7 +50,8 @@ Variables de entorno opcionales:
 | `PORT` | Puerto del servidor (por defecto 3000) |
 | `MODEL` | Modelo de Claude (por defecto `claude-opus-5-5`) |
 | `EFFORT` | Esfuerzo de razonamiento: `low` (por defecto) o `medium` si las respuestas se quedan cortas |
-| `ADMIN_TOKEN` | Protege el panel: `dashboard.html?client=...&token=...` |
+| `ADMIN_TOKEN` | Tu llave maestra: ve el panel de todos los clientes y el reporte. `dashboard.html?client=...&token=...` |
+| `REPORT_WEBHOOK_URL` | Webhook de n8n que envía el reporte mensual por correo (para `npm run report -- --send`) |
 | `WEBHOOK_URL` | Webhook global para eventos. Cada cliente puede tener el suyo en `webhook_url` |
 | `DATA_DIR` | Carpeta donde se guardan los eventos (por defecto `data/`) |
 
@@ -94,6 +96,34 @@ npm run qa -- --client demo-hvac --only gas-smell,book-visit
 Un cliente simulado por Claude conversa con el bot en 11 escenarios: agendar, ZIP fuera del área, precio de equipo nuevo, olor a gas, emergencia, "¿eres humano?", queja, número de tarjeta, intento de manipulación, cliente en español y día cerrado. Para cada uno se verifica que el bot haya creado (o no) la cita, el lead o la alerta, y otro modelo califica la conversación con una rúbrica. Las citas de prueba van a una carpeta temporal y el webhook del cliente se desactiva. El reporte completo queda en `data/qa/`, y el comando termina con error si algo falla.
 
 Córrelo antes de cada lanzamiento y cada vez que cambies `src/prompt.js`.
+
+## Registro de conversaciones
+
+Cada mensaje del cliente y cada respuesta del bot se guardan en `data/<slug>.messages.jsonl`. En el panel, la pestaña **Conversations** muestra cada conversación completa. Úsala para revisar qué dice el bot durante las primeras semanas de cada cliente.
+
+- Dale a cada cliente su propio `dashboard_token` en su JSON. Con ese token solo ve su panel; tu `ADMIN_TOKEN` ve todos.
+- Las conversaciones incluyen nombres, teléfonos y direcciones. `data/` está fuera de git: no lo subas a ningún lado. Define con cada cliente cuánto tiempo guardar las conversaciones (por ejemplo 12 meses) y borra lo anterior.
+
+## Reporte mensual
+
+```bash
+npm run report -- --client demo-hvac                  # mes anterior, solo genera el archivo
+npm run report -- --all --month 2026-10 --send        # todos los clientes reales (no las demos), y lo envía
+```
+
+El reporte va en inglés para el dueño. Empieza con el ingreso estimado (citas × `report.avg_ticket`) y sigue con:
+- conversaciones, citas, leads y alertas urgentes;
+- cuántas conversaciones llegaron fuera del horario de oficina (`office_hours`);
+- un resumen de Claude con los temas más consultados y las preguntas que el bot no supo contestar. Esto último es tu excusa para actualizar la configuración y mantener el contacto.
+
+Las sugerencias internas en español se imprimen en la consola y quedan en el `.json`, nunca en el correo. Los archivos se guardan en `data/reports/`.
+
+**Envío automático con n8n** (el día 1 de cada mes):
+1. Schedule Trigger: mensual, día 1, 8:00 AM.
+2. HTTP Request: `GET https://TU-SERVIDOR/api/report?client=<slug>&token=<ADMIN_TOKEN>`. Devuelve `{ to, subject, html, metrics }` del mes anterior. Usa un nodo por cliente, o una lista de slugs con Split Out.
+3. Gmail (o SMTP): envía `html` a `to` con el asunto `subject` y con copia para ti.
+
+Para ver el correo en el navegador, agrega `&format=html` a la URL.
 
 ## Instalar en un cliente
 

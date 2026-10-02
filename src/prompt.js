@@ -2,7 +2,7 @@
 // for the same client so prompt caching works: no timestamps or per-visitor data
 // here (the current time is sent as a mid-conversation system message instead).
 
-const INTERNAL_FIELDS = new Set(["slug", "demo", "brand_color", "webhook_url", "greeting"]);
+const INTERNAL_FIELDS = new Set(["slug", "demo", "brand_color", "webhook_url", "greeting", "dashboard_token", "report"]);
 
 export function buildSystemPrompt(config) {
   const businessInfo = Object.fromEntries(

@@ -11,16 +11,93 @@
   "brand_color": "#1f6feb",
   "greeting": "Hi! I'm Riley, the virtual assistant for Bluebonnet Heating & Air. Is your AC or heater acting up, or can I help you schedule maintenance?",
   "hours": "Monday-Friday 7 AM-6 PM, Saturday 8 AM-2 PM. 24/7 emergency service.",
+  "office_hours": {
+    "Monday": [
+      "07:00",
+      "18:00"
+    ],
+    "Tuesday": [
+      "07:00",
+      "18:00"
+    ],
+    "Wednesday": [
+      "07:00",
+      "18:00"
+    ],
+    "Thursday": [
+      "07:00",
+      "18:00"
+    ],
+    "Friday": [
+      "07:00",
+      "18:00"
+    ],
+    "Saturday": [
+      "08:00",
+      "14:00"
+    ],
+    "Sunday": null
+  },
   "service_area": {
     "description": "Austin, Round Rock, Pflugerville, Cedar Park and Georgetown",
-    "zip_codes": ["78701", "78702", "78703", "78704", "78705", "78717", "78722", "78723", "78726", "78727", "78728", "78729", "78731", "78741", "78744", "78745", "78748", "78749", "78750", "78751", "78752", "78753", "78754", "78757", "78758", "78759", "78613", "78626", "78628", "78633", "78660", "78664", "78665", "78681"]
+    "zip_codes": [
+      "78701",
+      "78702",
+      "78703",
+      "78704",
+      "78705",
+      "78717",
+      "78722",
+      "78723",
+      "78726",
+      "78727",
+      "78728",
+      "78729",
+      "78731",
+      "78741",
+      "78744",
+      "78745",
+      "78748",
+      "78749",
+      "78750",
+      "78751",
+      "78752",
+      "78753",
+      "78754",
+      "78757",
+      "78758",
+      "78759",
+      "78613",
+      "78626",
+      "78628",
+      "78633",
+      "78660",
+      "78664",
+      "78665",
+      "78681"
+    ]
   },
   "services": [
-    { "name": "AC repair", "description": "Diagnosis and repair of central AC, heat pumps and mini-splits, all major brands." },
-    { "name": "Heating repair", "description": "Gas furnaces, electric furnaces and heat pumps." },
-    { "name": "Maintenance tune-up", "description": "Seasonal AC or furnace tune-up: cleaning, refrigerant check, electrical and safety inspection." },
-    { "name": "New system installation", "description": "Free in-home estimate for replacing AC, furnace or heat pump systems." },
-    { "name": "Indoor air quality", "description": "Filters, UV lights, humidifiers and duct cleaning." }
+    {
+      "name": "AC repair",
+      "description": "Diagnosis and repair of central AC, heat pumps and mini-splits, all major brands."
+    },
+    {
+      "name": "Heating repair",
+      "description": "Gas furnaces, electric furnaces and heat pumps."
+    },
+    {
+      "name": "Maintenance tune-up",
+      "description": "Seasonal AC or furnace tune-up: cleaning, refrigerant check, electrical and safety inspection."
+    },
+    {
+      "name": "New system installation",
+      "description": "Free in-home estimate for replacing AC, furnace or heat pump systems."
+    },
+    {
+      "name": "Indoor air quality",
+      "description": "Filters, UV lights, humidifiers and duct cleaning."
+    }
   ],
   "pricing": {
     "diagnostic_fee": "$89 service call, waived if the customer approves the repair",
@@ -41,22 +118,50 @@
   },
   "booking": {
     "arrival_windows": [
-      { "label": "8-11 AM", "start_hour": 8 },
-      { "label": "11 AM-2 PM", "start_hour": 11 },
-      { "label": "2-5 PM", "start_hour": 14 }
+      {
+        "label": "8-11 AM",
+        "start_hour": 8
+      },
+      {
+        "label": "11 AM-2 PM",
+        "start_hour": 11
+      },
+      {
+        "label": "2-5 PM",
+        "start_hour": 14
+      }
     ],
-    "closed_days": ["Sunday"],
+    "closed_days": [
+      "Sunday"
+    ],
     "days_ahead": 7,
     "jobs_per_window": 2
   },
   "faqs": [
-    { "q": "What brands do you service?", "a": "All major brands, including Trane, Carrier, Lennox, Goodman, Rheem and Daikin." },
-    { "q": "Are you licensed and insured?", "a": "Yes, licensed by the Texas Department of Licensing and Regulation and fully insured." },
-    { "q": "Do you offer a maintenance plan?", "a": "Yes, the Comfort Club: $15/month, two tune-ups per year, priority scheduling and 15% off repairs." },
-    { "q": "How long does a repair visit take?", "a": "Most repairs take 1-2 hours once the technician arrives." }
+    {
+      "q": "What brands do you service?",
+      "a": "All major brands, including Trane, Carrier, Lennox, Goodman, Rheem and Daikin."
+    },
+    {
+      "q": "Are you licensed and insured?",
+      "a": "Yes, licensed by the Texas Department of Licensing and Regulation and fully insured."
+    },
+    {
+      "q": "Do you offer a maintenance plan?",
+      "a": "Yes, the Comfort Club: $15/month, two tune-ups per year, priority scheduling and 15% off repairs."
+    },
+    {
+      "q": "How long does a repair visit take?",
+      "a": "Most repairs take 1-2 hours once the technician arrives."
+    }
   ],
   "escalation": {
     "transfer_phone": "(512) 555-0142"
   },
-  "webhook_url": ""
+  "webhook_url": "",
+  "report": {
+    "email": "",
+    "avg_ticket": 350
+  },
+  "dashboard_token": ""
 }

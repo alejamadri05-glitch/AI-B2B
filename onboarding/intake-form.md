@@ -41,9 +41,11 @@ Send this to a new client (Google Form, Typeform or a 20-minute call). Each answ
 ## 6. FAQs
 - The 5–10 questions your office gets most, with your answers → `faqs`
 
-## 7. Notifications
+## 7. Notifications and reporting
 - Where should new bookings and leads go? (SMS, email, Google Sheet, CRM) → n8n webhook flow
-- Who should get the monthly report?
+- Who should get the monthly report? → `report.email`
+- What is your average ticket for a service visit? (used to estimate revenue in the report) → `report.avg_ticket`
+- Exact office hours, when someone answers the phone → `office_hours`
 
 ## 8. Consent
 - I confirm the information above is accurate and authorize the AI assistant to answer customers on our behalf using it. Name, title, date.

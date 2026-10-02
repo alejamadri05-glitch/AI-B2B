@@ -3,13 +3,16 @@
 //   GET  /dashboard.html?client=... live list of bookings, leads and escalations
 //   GET  /api/clients/<slug>        public branding for the chat page
 //   POST /api/chat                  { client, session_id, message, channel? } -> { reply }
-//   GET  /api/events?client=...     events for the dashboard (needs ADMIN_TOKEN if set)
+//   GET  /api/events?client=...     events for the dashboard (token: ADMIN_TOKEN or the client's dashboard_token)
+//   GET  /api/conversations?client=... conversation log for the dashboard (same token)
+//   GET  /api/report?client=...&month=YYYY-MM  monthly report { to, subject, html, metrics } (ADMIN_TOKEN)
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { runTurn, MODEL } from "./agent.js";
-import { ROOT_DIR, isValidSlug, loadClientConfig, readEvents } from "./store.js";
+import { ROOT_DIR, appendMessage, isValidSlug, loadClientConfig, readConversations, readEvents } from "./store.js";
+import { buildReport, previousMonth } from "./report.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
@@ -98,19 +101,35 @@ async function handleChat(req, res) {
     return send(res, 200, { reply: `This chat is getting long. Please call us at ${config.phone} so we can help you directly.` });
   }
 
+  const turnChannel = channel === "sms" ? "sms" : "web";
+  const log = (role, msg, extra = {}) => appendMessage(slug, { session_id: sessionId, channel: turnChannel, role, text: msg, ...extra });
   session.busy = true;
+  log("customer", text);
   try {
-    const { reply } = await runTurn({
-      config,
-      history: session.history,
-      userText: text,
-      sessionId,
-      channel: channel === "sms" ? "sms" : "web",
-    });
+    const { reply } = await runTurn({ config, history: session.history, userText: text, sessionId, channel: turnChannel });
+    log("assistant", reply);
     send(res, 200, { reply });
+  } catch (err) {
+    log("assistant", "(no reply: the assistant failed)", { error: err.message });
+    throw err;
   } finally {
     session.busy = false;
   }
+}
+
+// Dashboard data: ADMIN_TOKEN sees every client, a client's dashboard_token only its own.
+// With no token configured at all (local development), access is open.
+function canView(url, config) {
+  const token = url.searchParams.get("token");
+  if (!ADMIN_TOKEN && !config.dashboard_token) return true;
+  return Boolean(token) && (token === ADMIN_TOKEN || token === config.dashboard_token);
+}
+
+function clientFromQuery(url) {
+  const slug = url.searchParams.get("client");
+  const config = isValidSlug(slug) ? loadClientConfig(slug) : null;
+  if (!config) throw new HttpError(404, "Unknown client");
+  return config;
 }
 
 function publicProfile(config) {
@@ -129,10 +148,25 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/events") {
+      const config = clientFromQuery(url);
+      if (!canView(url, config)) throw new HttpError(401, "Invalid token");
+      return send(res, 200, { events: readEvents(config.slug).reverse() });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/conversations") {
+      const config = clientFromQuery(url);
+      if (!canView(url, config)) throw new HttpError(401, "Invalid token");
+      return send(res, 200, { conversations: readConversations(config.slug).slice(0, 200) });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/report") {
+      const config = clientFromQuery(url);
       if (ADMIN_TOKEN && url.searchParams.get("token") !== ADMIN_TOKEN) throw new HttpError(401, "Invalid token");
-      const slug = url.searchParams.get("client");
-      if (!isValidSlug(slug) || !loadClientConfig(slug)) throw new HttpError(404, "Unknown client");
-      return send(res, 200, { events: readEvents(slug).reverse() });
+      const month = url.searchParams.get("month") || previousMonth(new Date(), config.timezone);
+      if (!/^\d{4}-\d{2}$/.test(month)) throw new HttpError(400, "month must be YYYY-MM");
+      const report = await buildReport(config, month, { ai: url.searchParams.get("ai") !== "0" });
+      if (url.searchParams.get("format") === "html") return send(res, 200, report.html, "text/html");
+      return send(res, 200, report);
     }
 
     if (req.method === "GET") return serveStatic(res, url.pathname);

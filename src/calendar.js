@@ -92,3 +92,34 @@ export function availableWindows(config, now, fromDate = null, limit = 9) {
   }
   return slots;
 }
+
+const DEFAULT_OFFICE_HOURS = {
+  Monday: ["08:00", "17:00"],
+  Tuesday: ["08:00", "17:00"],
+  Wednesday: ["08:00", "17:00"],
+  Thursday: ["08:00", "17:00"],
+  Friday: ["08:00", "17:00"],
+  Saturday: null,
+  Sunday: null,
+};
+
+// True when the moment falls outside the office hours in config.office_hours
+// ({ Monday: ["07:00", "18:00"], ..., Sunday: null }), in the client's time zone.
+export function isAfterHours(config, at) {
+  const hours = config.office_hours ?? DEFAULT_OFFICE_HOURS;
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: config.timezone,
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(at))
+      .map((p) => [p.type, p.value]),
+  );
+  const open = hours[parts.weekday];
+  if (!open) return true;
+  const time = `${parts.hour}:${parts.minute}`;
+  return time < open[0] || time >= open[1];
+}
