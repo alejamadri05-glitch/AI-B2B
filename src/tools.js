@@ -119,7 +119,8 @@ async function notifyWebhook(config, record) {
         business_name: config.business_name,
         // Where n8n should send the alert for this client.
         alerts: {
-          email: config._onboarding?.alerts_email || config.report?.email || null,
+          // Demos have no owner: their alerts go to you (ALERTS_FALLBACK_EMAIL) so you can show them in sales calls.
+          email: config._onboarding?.alerts_email || config.report?.email || process.env.ALERTS_FALLBACK_EMAIL || null,
           phone: config._onboarding?.alerts_phone || null,
         },
         ...record,

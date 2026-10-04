@@ -23,5 +23,7 @@ services:
         sync: false
       - key: ONBOARDING_WEBHOOK_URL
         sync: false
+      - key: ALERTS_FALLBACK_EMAIL
+        sync: false
       - key: OUTSCRAPER_API_KEY
         sync: false
