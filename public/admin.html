@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Panel de Administración</title>
   <meta name="robots" content="noindex">
+  <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
         <input id="token" type="password" autocomplete="current-password">
       </label>
       <label class="check"><input type="checkbox" id="remember"> Recordar en este navegador</label>
-      <div class="actions"><button type="button" class="primary" id="enter">Entrar</button></div>
+      <div class="actions"><button type="button" class="primary" id="enter"><span data-icon="lock-simple"></span>Entrar</button></div>
     </fieldset>
 
     <div id="app" hidden>
@@ -31,23 +32,27 @@
           <label>Sitio web (opcional)<input id="website" type="url" placeholder="https://"></label>
         </div>
         <label class="check"><input type="checkbox" id="prefill" checked> Prellenar el formulario desde el sitio web (tarda ~1 minuto, usa Claude)</label>
-        <div class="actions"><button type="button" class="primary" id="create">Crear invitación</button></div>
+        <div class="actions"><button type="button" class="primary" id="create"><span data-icon="plus"></span><span>Crear invitación</span></button></div>
         <div class="banner" id="created" hidden></div>
       </fieldset>
 
       <h2>Invitaciones</h2>
-      <p class="muted" id="empty" hidden>Todavía no hay invitaciones.</p>
+      <div class="empty" id="empty" hidden><span data-icon="paper-plane-tilt"></span><strong>Todavía no hay invitaciones</strong><p>Crea la primera arriba y mándale el enlace del formulario al cliente.</p></div>
+      <div class="stack" id="invites-loading" aria-hidden="true"><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
       <div class="events" id="invites"></div>
 
       <h2>Accesos rápidos</h2>
       <div class="actions">
-        <a class="button-link" href="/?client=demo-hvac" target="_blank" rel="noopener">Demo</a>
-        <a class="button-link" id="demo-dashboard" target="_blank" rel="noopener">Panel de la demo</a>
-        <button type="button" class="secondary" id="logout">Salir</button>
+        <a class="button-link" href="/?client=demo-hvac" target="_blank" rel="noopener"><span data-icon="chat-circle-dots"></span>Demo</a>
+        <a class="button-link" id="demo-dashboard" target="_blank" rel="noopener"><span data-icon="list-checks"></span>Panel de la demo</a>
+        <button type="button" class="secondary" id="logout"><span data-icon="sign-out"></span>Salir</button>
       </div>
     </div>
   </main>
+  <script src="/icons.js" type="module"></script>
   <script type="module">
+    import { icon } from "/icons.js";
+
     const $ = (id) => document.getElementById(id);
     const STATUS = {
       prefilling: "Prellenando desde el sitio",
@@ -95,19 +100,23 @@
     async function copy(text, button) {
       try {
         await navigator.clipboard.writeText(text);
-        const original = button.textContent;
-        button.textContent = "Copiado";
-        setTimeout(() => (button.textContent = original), 1500);
+        const label = button.lastChild;
+        const original = label.textContent;
+        label.textContent = "Copiado";
+        setTimeout(() => (label.textContent = original), 1500);
       } catch {
         prompt("Copia este enlace:", text);
       }
     }
 
-    function linkButton(label, onClick) {
+    function linkButton(label, iconName, onClick) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "secondary";
-      b.textContent = label;
+      b.innerHTML = icon(iconName);
+      const text = document.createElement("span");
+      text.textContent = label;
+      b.append(text);
       b.addEventListener("click", () => onClick(b));
       return b;
     }
@@ -116,6 +125,7 @@
       const list = $("invites");
       list.replaceChildren();
       $("empty").hidden = invites.length > 0;
+      $("invites-loading").hidden = true;
       for (const i of invites) {
         const card = document.createElement("article");
         card.className = "event";
@@ -124,21 +134,22 @@
         const tag = document.createElement("span");
         tag.className = `tag ${i.status === "live" ? "booking" : i.status === "review" ? "escalation" : "lead"}`;
         tag.textContent = STATUS[i.status] ?? i.status;
+        tag.prepend(document.createRange().createContextualFragment(icon(i.status === "live" ? "check-circle" : i.status === "review" ? "warning-circle" : "clock-countdown")));
         const name = document.createElement("strong");
         name.textContent = i.business_name;
         head.append(tag, name);
         const meta = document.createElement("p");
         meta.className = "muted";
-        meta.style.margin = "0 0 8px";
+        meta.style.margin = "0";
         const qa = i.qa ? (i.qa.error ? " · pruebas: error" : ` · pruebas ${i.qa.passed}/${i.qa.total}`) : "";
         meta.textContent = `${i.contact_email || "sin correo"} · ${new Date(i.updated_at).toLocaleString()}${qa}`;
         const actions = document.createElement("div");
         actions.className = "actions";
-        actions.append(linkButton("Copiar enlace del formulario", (b) => copy(i.links.form, b)));
-        actions.append(linkButton("Abrir revisión", () => window.open(i.links.review, "_blank", "noopener")));
+        actions.append(linkButton("Copiar enlace del formulario", "copy", (b) => copy(i.links.form, b)));
+        actions.append(linkButton("Abrir revisión", "arrow-square-out", () => window.open(i.links.review, "_blank", "noopener")));
         if (i.status === "live") {
-          actions.append(linkButton("Abrir panel del cliente", () => window.open(i.links.dashboard, "_blank", "noopener")));
-          actions.append(linkButton("Copiar código del widget", (b) => copy(i.links.widget, b)));
+          actions.append(linkButton("Abrir panel del cliente", "list-checks", () => window.open(i.links.dashboard, "_blank", "noopener")));
+          actions.append(linkButton("Copiar código del widget", "copy", (b) => copy(i.links.widget, b)));
         }
         card.append(head, meta, actions);
         list.append(card);
@@ -170,7 +181,7 @@
       const business_name = $("business").value.trim();
       if (!business_name) return showError("Escribe el nombre del negocio.");
       $("create").disabled = true;
-      $("create").textContent = "Creando…";
+      $("create").lastChild.textContent = "Creando…";
       try {
         const invite = await api("/api/admin/invites", {
           method: "POST",
@@ -190,8 +201,8 @@
         code.textContent = invite.links.form;
         const actions = document.createElement("div");
         actions.className = "actions";
-        actions.append(linkButton("Copiar enlace", (b) => copy(invite.links.form, b)));
-        actions.append(linkButton("Abrir formulario", () => window.open(invite.links.form, "_blank", "noopener")));
+        actions.append(linkButton("Copiar enlace", "copy", (b) => copy(invite.links.form, b)));
+        actions.append(linkButton("Abrir formulario", "arrow-square-out", () => window.open(invite.links.form, "_blank", "noopener")));
         box.append(p, code, actions);
         box.hidden = false;
         $("business").value = $("email").value = $("website").value = "";
@@ -200,7 +211,7 @@
         showError(err.message);
       } finally {
         $("create").disabled = false;
-        $("create").textContent = "Crear invitación";
+        $("create").lastChild.textContent = "Crear invitación";
       }
     });
 

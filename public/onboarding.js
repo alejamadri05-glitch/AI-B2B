@@ -1,3 +1,5 @@
+import { icon } from "/icons.js";
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const invite = new URLSearchParams(location.search).get("invite") || "";
 const draftKey = `onboarding-draft:${invite}`;
@@ -37,7 +39,7 @@ function addRow(listName, values = {}) {
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "link";
-  remove.textContent = "Remove";
+  remove.innerHTML = `${icon("trash")}Remove`;
   remove.addEventListener("click", () => {
     row.remove();
     saveDraft();
@@ -116,9 +118,14 @@ function fill(data) {
   }
 }
 
+let savedTimer;
 function saveDraft() {
   try {
     localStorage.setItem(draftKey, JSON.stringify(collect()));
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(() => {
+      $("save-status").innerHTML = `${icon("check-circle")}Saved in this browser`;
+    }, 400);
   } catch {
     // Storage blocked (private mode): the form still works, it just won't remember.
   }
@@ -150,7 +157,15 @@ function showErrors(errors = {}) {
 
 async function init() {
   buildStatic();
-  const res = await fetch(`/api/onboarding/${encodeURIComponent(invite)}`);
+  let res;
+  try {
+    res = await fetch(`/api/onboarding/${encodeURIComponent(invite)}`);
+  } catch {
+    $("form-loading").hidden = true;
+    showBanner("Connection problem. Please check your internet and reload this page.", true);
+    return;
+  }
+  $("form-loading").hidden = true;
   if (!res.ok) {
     showBanner("This setup link is not valid. Please check the link in your email.", true);
     return;
@@ -183,6 +198,7 @@ async function init() {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   $("submit").disabled = true;
+  $("save-status").textContent = "Sending…";
   try {
     const payload = collect();
     payload.avg_ticket = payload.avg_ticket === "" ? 0 : Number(payload.avg_ticket);
@@ -209,6 +225,7 @@ form.addEventListener("submit", async (event) => {
     showBanner("Connection problem. Your answers are saved here; please try again.", true);
   } finally {
     $("submit").disabled = false;
+    if ($("save-status").textContent === "Sending…") $("save-status").textContent = "";
   }
 });
 

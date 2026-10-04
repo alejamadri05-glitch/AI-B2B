@@ -4,25 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Receptionist Dashboard</title>
+  <meta name="robots" content="noindex">
+  <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <main class="dash">
-    <h1 id="title">Dashboard</h1>
-    <p class="muted">Everything the AI receptionist captured. Updates every 5 seconds.</p>
+    <div class="dash-head">
+      <div>
+        <p class="eyebrow">AI receptionist dashboard</p>
+        <h1 id="title">Dashboard</h1>
+      </div>
+      <p class="live-dot">Live · updates every 5 seconds</p>
+    </div>
+    <div class="banner error" id="dash-error" hidden></div>
     <div class="stats">
-      <div class="stat"><div class="n" id="n-booking">0</div><div class="label">Jobs booked</div></div>
-      <div class="stat"><div class="n" id="n-lead">0</div><div class="label">Leads captured</div></div>
-      <div class="stat"><div class="n" id="n-escalation">0</div><div class="label">Urgent alerts</div></div>
+      <div class="stat"><div class="n" id="n-booking"><span class="skeleton" style="width: 2.5rem"></span></div><div class="label"><span data-icon="calendar-check"></span>Jobs booked</div></div>
+      <div class="stat"><div class="n" id="n-lead"><span class="skeleton" style="width: 2.5rem"></span></div><div class="label"><span data-icon="user-plus"></span>Leads captured</div></div>
+      <div class="stat"><div class="n" id="n-escalation"><span class="skeleton" style="width: 2.5rem"></span></div><div class="label"><span data-icon="siren"></span>Urgent alerts</div></div>
     </div>
     <div class="tabs" role="tablist">
-      <button type="button" role="tab" id="tab-events" aria-selected="true">Actions</button>
-      <button type="button" role="tab" id="tab-conversations" aria-selected="false">Conversations</button>
+      <button type="button" role="tab" id="tab-events" aria-selected="true" aria-controls="events"><span data-icon="list-checks"></span>Actions</button>
+      <button type="button" role="tab" id="tab-conversations" aria-selected="false" aria-controls="conversations"><span data-icon="chats"></span>Conversations</button>
     </div>
-    <div class="events" id="events"></div>
-    <div class="events" id="conversations" hidden></div>
+    <div class="events" id="events" role="tabpanel"><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
+    <div class="events" id="conversations" role="tabpanel" hidden><div class="skeleton-card"></div></div>
   </main>
+  <script src="/icons.js" type="module"></script>
   <script type="module">
+    import { applyBrand } from "/brand.js";
+    import { icon } from "/icons.js";
+
     const params = new URLSearchParams(location.search);
     const slug = params.get("client") || "demo-hvac";
     const token = params.get("token") || "";
@@ -30,13 +42,28 @@
 
     fetch(`/api/clients/${encodeURIComponent(slug)}`)
       .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
       .then((p) => {
         if (!p) return;
-        $("title").textContent = `${p.business_name} · Receptionist dashboard`;
-        document.documentElement.style.setProperty("--brand", p.brand_color || "#1f6feb");
+        $("title").textContent = p.business_name;
+        document.title = `${p.business_name} · Dashboard`;
+        applyBrand(p.brand_color);
       });
 
     const LABELS = { booking: "Booked job", lead: "Lead", escalation: "Urgent alert" };
+    const ICONS = { booking: "calendar-check", lead: "user-plus", escalation: "siren" };
+
+    function empty(iconName, title, text) {
+      const box = document.createElement("div");
+      box.className = "empty";
+      box.innerHTML = icon(iconName);
+      const strong = document.createElement("strong");
+      strong.textContent = title;
+      const p = document.createElement("p");
+      p.textContent = text;
+      box.append(strong, p);
+      return box;
+    }
 
     function render(events) {
       for (const type of Object.keys(LABELS)) {
@@ -45,10 +72,7 @@
       const list = $("events");
       list.replaceChildren();
       if (!events.length) {
-        const p = document.createElement("p");
-        p.className = "muted";
-        p.textContent = "Nothing yet. Start a conversation in the chat demo.";
-        list.append(p);
+        list.append(empty("list-checks", "No bookings or leads yet", "When a customer books a visit, leaves their details or reports an emergency in the chat, it shows up here within seconds."));
       }
       for (const e of events) {
         const card = document.createElement("article");
@@ -57,10 +81,10 @@
         head.className = "event-head";
         const tag = document.createElement("span");
         tag.className = `tag ${e.type}`;
-        tag.textContent = LABELS[e.type] || e.type;
+        tag.innerHTML = ICONS[e.type] ? icon(ICONS[e.type]) : "";
+        tag.append(LABELS[e.type] || e.type);
         const when = document.createElement("span");
         when.className = "muted";
-        when.style.margin = "0";
         when.textContent = `#${e.id} · ${new Date(e.at).toLocaleString()} · ${e.channel || "web"}`;
         head.append(tag, when);
         const dl = document.createElement("dl");
@@ -82,10 +106,7 @@
       const open = new Set([...list.querySelectorAll("details[open]")].map((d) => d.dataset.id));
       list.replaceChildren();
       if (!conversations.length) {
-        const p = document.createElement("p");
-        p.className = "muted";
-        p.textContent = "No conversations yet.";
-        list.append(p);
+        list.append(empty("chats", "No conversations yet", "Every chat with the assistant is saved here, word for word, so you can see exactly what your customers asked."));
       }
       for (const c of conversations) {
         const details = document.createElement("details");
@@ -94,7 +115,7 @@
         details.open = open.has(c.session_id);
         const summary = document.createElement("summary");
         const first = c.messages.find((m) => m.role === "customer");
-        summary.textContent = `${new Date(c.started_at).toLocaleString()} · ${c.channel} · ${c.messages.length} messages — ${first ? first.text.slice(0, 80) : ""}`;
+        summary.textContent = `${new Date(c.started_at).toLocaleString()} · ${c.channel} · ${c.messages.length} messages: ${first ? first.text.slice(0, 80) : ""}`;
         details.append(summary);
         const thread = document.createElement("div");
         thread.className = "thread";
@@ -109,12 +130,28 @@
       }
     }
 
+    function showError(message) {
+      $("dash-error").textContent = message;
+      $("dash-error").hidden = !message;
+    }
+
     async function refresh() {
       const q = `client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
-      const [events, conversations] = await Promise.all([fetch(`/api/events?${q}`), fetch(`/api/conversations?${q}`)]);
-      if (events.ok) render((await events.json()).events);
-      else $("events").textContent = (await events.json()).error;
-      if (conversations.ok) renderConversations((await conversations.json()).conversations);
+      try {
+        const [events, conversations] = await Promise.all([fetch(`/api/events?${q}`), fetch(`/api/conversations?${q}`)]);
+        if (!events.ok) {
+          const { error } = await events.json().catch(() => ({}));
+          showError(events.status === 401 ? "This dashboard link is missing its access key. Use the full link from your welcome email." : error || "Could not load your data.");
+          for (const id of ["events", "conversations"]) $(id).replaceChildren();
+          for (const type of Object.keys(LABELS)) $(`n-${type}`).textContent = "0";
+          return;
+        }
+        showError("");
+        render((await events.json()).events);
+        if (conversations.ok) renderConversations((await conversations.json()).conversations);
+      } catch {
+        showError("Connection problem. Retrying in a few seconds.");
+      }
     }
 
     for (const [tab, panel] of [["tab-events", "events"], ["tab-conversations", "conversations"]]) {

@@ -36,7 +36,14 @@ const RATE_LIMIT = { max: 40, windowMs: 10 * 60 * 1000 };
 const sessions = new Map(); // `${slug}:${sessionId}` -> { history, busy, updatedAt }
 const hits = new Map(); // ip -> timestamps
 
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
+const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".woff2": "font/woff2",
+};
 
 function send(res, status, body, type = "application/json") {
   res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "cache-control": "no-store" });
@@ -48,8 +55,11 @@ function serveStatic(res, pathname) {
   if (!file.startsWith(PUBLIC_DIR + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     return send(res, 404, { error: "Not found" });
   }
-  const type = MIME[path.extname(file)] || "application/octet-stream";
-  res.writeHead(200, { "content-type": `${type}; charset=utf-8` });
+  const ext = path.extname(file);
+  const headers = { "content-type": MIME[ext] || "application/octet-stream" };
+  // Fonts never change under the same name; everything else stays fresh after a deploy.
+  if (ext === ".woff2") headers["cache-control"] = "public, max-age=31536000, immutable";
+  res.writeHead(200, headers);
   fs.createReadStream(file).pipe(res);
 }
 

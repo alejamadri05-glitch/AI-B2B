@@ -4,20 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Receptionist Setup</title>
+  <meta name="robots" content="noindex">
+  <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <main class="form-page">
     <p class="eyebrow">AI receptionist setup</p>
     <h1 id="title">Tell us about your business</h1>
-    <p class="muted">About 15 minutes. Your assistant will only use what you write here, so be as specific as you can. Your answers are saved in this browser as you type.</p>
+    <p class="muted">Your assistant will only use what you write here, so be as specific as you can. You can stop and come back: this browser keeps your answers.</p>
+    <ul class="meta-row">
+      <li><span data-icon="clock-countdown"></span>About 15 minutes</li>
+      <li><span data-icon="check-circle"></span>We test your assistant before it goes live</li>
+      <li><span data-icon="lock-simple"></span>Only used for your assistant</li>
+    </ul>
 
     <div class="banner" id="banner" hidden></div>
     <div class="banner error" id="error-summary" hidden></div>
 
+    <div class="stack" id="form-loading" aria-hidden="true"><div class="skeleton-card"></div><div class="skeleton-card"></div></div>
+
     <form id="form" novalidate hidden>
       <fieldset>
-        <legend>1. Business basics</legend>
+        <legend>Business basics</legend>
         <label>Business name, as customers know it<input name="business_name" required><span class="field-error" data-error="business_name"></span></label>
         <label>Main trade<input name="trade" placeholder="e.g. HVAC (heating and air conditioning)"><span class="field-error" data-error="trade"></span></label>
         <div class="row">
@@ -43,28 +52,28 @@
       </fieldset>
 
       <fieldset>
-        <legend>2. Office hours</legend>
+        <legend>Office hours</legend>
         <p class="hint">When someone at your office answers the phone. Outside these hours, the assistant is your front desk.</p>
         <div class="hours" id="hours"></div>
         <span class="field-error" data-error="office_hours"></span>
       </fieldset>
 
       <fieldset>
-        <legend>3. Service area</legend>
+        <legend>Service area</legend>
         <label>Cities or counties you serve<input name="service_area_description" placeholder="Houston, Katy, Sugar Land and Pearland"><span class="field-error" data-error="service_area_description"></span></label>
         <label>ZIP codes you serve (any format, we'll find the 5-digit codes)<textarea name="zip_codes" rows="3" placeholder="77002, 77003, 77004 …"></textarea></label>
         <p class="hint">Leave empty to accept any ZIP. A full list keeps techs from driving too far.</p>
       </fieldset>
 
       <fieldset>
-        <legend>4. Services</legend>
+        <legend>Services</legend>
         <div class="list" id="services"></div>
-        <button type="button" class="secondary" data-add="services">+ Add a service</button>
+        <button type="button" class="secondary" data-add="services"><span data-icon="plus"></span>Add a service</button>
         <span class="field-error" data-error="services"></span>
       </fieldset>
 
       <fieldset>
-        <legend>5. Prices and policies</legend>
+        <legend>Prices and policies</legend>
         <p class="hint">The assistant never quotes repair or installation totals. Only list prices you are happy to share in chat.</p>
         <div class="row">
           <label>Service call / diagnostic fee<input name="diagnostic_fee" placeholder="$89, waived if you approve the repair"></label>
@@ -80,7 +89,7 @@
       </fieldset>
 
       <fieldset>
-        <legend>6. Emergencies</legend>
+        <legend>Emergencies</legend>
         <label class="check"><input type="checkbox" name="emergency_24_7"> We offer 24/7 emergency service</label>
         <label>What counts as an emergency for you?<textarea name="emergency_examples" rows="2" placeholder="No AC above 95°F with a baby or elderly person at home, water leaking through the ceiling…"></textarea></label>
         <label>What happens after the assistant alerts you?<input name="on_call_response" placeholder="The on-call technician calls back within 15 minutes."></label>
@@ -91,10 +100,10 @@
       </fieldset>
 
       <fieldset>
-        <legend>7. Scheduling</legend>
+        <legend>Scheduling</legend>
         <p class="hint">Arrival windows customers can book, with the hour each one starts (24-hour clock).</p>
         <div class="list" id="arrival_windows"></div>
-        <button type="button" class="secondary" data-add="arrival_windows">+ Add a window</button>
+        <button type="button" class="secondary" data-add="arrival_windows"><span data-icon="plus"></span>Add a window</button>
         <span class="field-error" data-error="arrival_windows"></span>
         <p class="hint">Days you don't book regular jobs:</p>
         <div class="days" id="closed_days"></div>
@@ -106,14 +115,14 @@
       </fieldset>
 
       <fieldset>
-        <legend>8. Frequent questions</legend>
-        <p class="hint">The 5–10 questions your office gets most, with your answers.</p>
+        <legend>Frequent questions</legend>
+        <p class="hint">The 5 to 10 questions your office gets most, with your answers.</p>
         <div class="list" id="faqs"></div>
-        <button type="button" class="secondary" data-add="faqs">+ Add a question</button>
+        <button type="button" class="secondary" data-add="faqs"><span data-icon="plus"></span>Add a question</button>
       </fieldset>
 
       <fieldset>
-        <legend>9. Notifications and reporting</legend>
+        <legend>Notifications and reporting</legend>
         <div class="row">
           <label>Email for new bookings and leads<input name="alerts_email" type="email"></label>
           <label>Email for the monthly report<input name="report_email" type="email"><span class="field-error" data-error="report_email"></span></label>
@@ -122,7 +131,7 @@
       </fieldset>
 
       <fieldset>
-        <legend>10. Confirmation</legend>
+        <legend>Confirmation</legend>
         <div class="row">
           <label>Your name<input name="consent_name"><span class="field-error" data-error="consent_name"></span></label>
           <label>Your title<input name="consent_title" placeholder="Owner"></label>
@@ -131,9 +140,13 @@
         <span class="field-error" data-error="consent"></span>
       </fieldset>
 
-      <button type="submit" class="primary" id="submit">Submit</button>
+      <div class="form-footer">
+        <button type="submit" class="primary" id="submit"><span data-icon="paper-plane-tilt"></span>Submit</button>
+        <span class="save-status" id="save-status" aria-live="polite"></span>
+      </div>
     </form>
   </main>
+  <script src="/icons.js" type="module"></script>
   <script src="/onboarding.js" type="module"></script>
 </body>
 </html>

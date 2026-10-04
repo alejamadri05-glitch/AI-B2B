@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>AI Receptionist Demo</title>
+  <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -12,25 +13,38 @@
       <p class="eyebrow" id="demo-badge" hidden>Live demo</p>
       <h1 id="intro-title">Your 24/7 AI receptionist</h1>
       <p id="intro-text">Answers your website and text messages in seconds, books jobs into open arrival windows, and alerts you about emergencies. Try it: ask about a broken AC, prices, or book a visit.</p>
-      <p class="hint">Bookings and leads from this chat show up on the <a id="dashboard-link" href="#">live dashboard</a>.</p>
+      <ul class="features" id="features-demo">
+        <li><span data-icon="clock-countdown"></span><div><strong>Replies in seconds, day or night</strong><span class="muted">Nights, weekends and the lunch rush included.</span></div></li>
+        <li><span data-icon="calendar-check"></span><div><strong>Books jobs into open windows</strong><span class="muted">Checks your arrival windows and never double-books.</span></div></li>
+        <li><span data-icon="bell-ringing"></span><div><strong>Flags emergencies right away</strong><span class="muted">Gas smells, leaks and no-heat calls reach you by text and email.</span></div></li>
+      </ul>
+      <ul class="features" id="features-customer" hidden>
+        <li><span data-icon="clock-countdown"></span><div><strong>Answers in seconds, any hour</strong><span class="muted">Ask about services, prices or areas we cover.</span></div></li>
+        <li><span data-icon="calendar-check"></span><div><strong>Book a visit in the chat</strong><span class="muted">Pick an arrival window that works for you.</span></div></li>
+        <li><span data-icon="bell-ringing"></span><div><strong>Urgent problem?</strong><span class="muted">Tell the assistant and our team is alerted right away.</span></div></li>
+      </ul>
+      <p class="hint"><a class="button-link" id="dashboard-link" href="#"><span data-icon="list-checks"></span>Open the live dashboard</a> Bookings and leads from this chat show up there.</p>
+      <p class="hint" id="call-line" hidden><a class="button-link" id="call-link" href="#"><span data-icon="phone"></span><span id="call-number"></span></a> Prefer to talk to a person? Give us a call.</p>
     </section>
 
     <section class="chat" aria-label="Chat">
       <header class="chat-header">
-        <div class="avatar" id="avatar">R</div>
+        <div class="avatar" id="avatar" aria-hidden="true"></div>
         <div>
-          <div class="chat-title" id="business-name">Loading…</div>
+          <div class="chat-title" id="business-name"><span class="skeleton" style="width: 10rem"></span><span class="visually-hidden">Loading</span></div>
           <div class="chat-subtitle" id="agent-line">Virtual assistant · replies instantly</div>
         </div>
+        <a class="header-call" id="header-call" href="#" hidden><span data-icon="phone"></span><span class="visually-hidden">Call us</span></a>
       </header>
       <div class="messages" id="messages" role="log" aria-live="polite"></div>
       <form class="composer" id="composer">
-        <input id="input" type="text" autocomplete="off" maxlength="2000" placeholder="Type a message…" aria-label="Message">
-        <button type="submit" id="send">Send</button>
+        <input id="input" type="text" autocomplete="off" enterkeyhint="send" maxlength="2000" placeholder="Type a message…" aria-label="Message">
+        <button type="submit" id="send"><span data-icon="paper-plane-right"></span><span class="visually-hidden">Send</span></button>
       </form>
       <p class="disclaimer">AI assistant. In an emergency involving gas, fire or smoke, leave the home and call 911.</p>
     </section>
   </main>
+  <script src="/icons.js" type="module"></script>
   <script src="/chat.js" type="module"></script>
 </body>
 </html>

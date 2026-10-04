@@ -1,3 +1,5 @@
+import { applyBrand } from "/brand.js";
+
 const params = new URLSearchParams(location.search);
 const slug = params.get("client") || "demo-hvac";
 const embed = params.get("embed") === "1";
@@ -37,21 +39,42 @@ function showTyping() {
   return div;
 }
 
+function profileFailed(message) {
+  document.body.classList.add("ready");
+  $("avatar").classList.add("offline");
+  $("dashboard-link").closest("p").hidden = true;
+  $("business-name").textContent = "Chat unavailable";
+  $("agent-line").textContent = "";
+  addMessage(message, "error");
+  input.disabled = sendBtn.disabled = true;
+}
+
 async function loadProfile() {
-  const res = await fetch(`/api/clients/${encodeURIComponent(slug)}`);
-  if (!res.ok) {
-    $("business-name").textContent = "Unknown business";
-    addMessage(`No configuration found for "${slug}".`, "error");
-    input.disabled = sendBtn.disabled = true;
-    return;
+  input.disabled = sendBtn.disabled = true;
+  const typing = showTyping();
+  let res;
+  try {
+    res = await fetch(`/api/clients/${encodeURIComponent(slug)}`);
+  } catch {
+    typing.remove();
+    return profileFailed("Connection problem. Please check your internet and reload the page.");
   }
+  typing.remove();
+  if (!res.ok) return profileFailed(`No configuration found for "${slug}".`);
   const p = await res.json();
   document.title = `${p.business_name} · AI Receptionist`;
-  document.documentElement.style.setProperty("--brand", p.brand_color || "#1f6feb");
+  applyBrand(p.brand_color);
   $("business-name").textContent = p.business_name;
   $("agent-line").textContent = `${p.agent_name} · Virtual assistant · replies instantly`;
   $("avatar").textContent = (p.agent_name || "A").charAt(0);
   $("demo-badge").hidden = !p.demo;
+  if (p.phone) {
+    const tel = `tel:${p.phone.replace(/[^\d+]/g, "")}`;
+    $("header-call").href = $("call-link").href = tel;
+    $("header-call").title = `Call ${p.phone}`;
+    $("call-number").textContent = p.phone;
+    $("header-call").hidden = false;
+  }
   if (p.demo) {
     $("intro-title").textContent = `${p.business_name}'s 24/7 AI receptionist`;
     $("dashboard-link").href = `/dashboard.html?client=${encodeURIComponent(slug)}`;
@@ -61,8 +84,14 @@ async function loadProfile() {
     $("intro-title").textContent = p.business_name;
     $("intro-text").textContent = "Questions, a quote or a service visit? Chat with us any time: we reply in seconds and can book your appointment.";
     $("dashboard-link").closest("p").hidden = true;
+    $("features-demo").hidden = true;
+    $("features-customer").hidden = false;
+    $("call-line").hidden = !p.phone;
   }
+  document.body.classList.add("ready");
   addMessage(p.greeting, "in");
+  input.disabled = sendBtn.disabled = false;
+  if (!embed && matchMedia("(pointer: fine)").matches) input.focus();
 }
 
 $("composer").addEventListener("submit", async (event) => {
