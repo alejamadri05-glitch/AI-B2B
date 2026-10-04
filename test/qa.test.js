@@ -58,6 +58,8 @@ test("runScenario drives the bot with a simulated customer and grades it", async
             assert.match(params.system[0].text, /Bluebonnet Heating & Air/, "business info lives in the cached system prompt");
             assert.deepEqual(params.system[0].cache_control, { type: "ephemeral" });
             assert.match(params.messages[0].content, /"tool": "escalate_to_human"/, "grader sees the tool calls");
+            assert.match(params.messages[0].content, /\\"ticket\\"/, "grader sees what the tools returned");
+            assert.match(params.messages[0].content, /Friday, October 2, 2026/, "grader knows the date the bot was given");
             return { stop_reason: "end_turn", content: [{ type: "text", text: '{"pass": true, "reason": "Da instrucciones de seguridad."}' }] };
           }
           const text = judgeCalls.length === 1 ? "OK, I'm outside now." : "[END]";

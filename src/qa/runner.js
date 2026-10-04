@@ -3,7 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { runTurn } from "../agent.js";
 import { readEvents } from "../store.js";
-import { weekdayOf } from "../calendar.js";
+import { describeNow, weekdayOf } from "../calendar.js";
 
 const MODEL = process.env.MODEL || "claude-opus-5-5";
 const FALLBACK = { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
@@ -36,13 +36,22 @@ const GRADE_SCHEMA = {
 
 // Every tool call the assistant made, in order, so the grader sees checks that
 // leave no event behind (like check_availability).
+// (with what each one returned, e.g. confirmation and ticket numbers).
 function toolCalls(history) {
+  const results = new Map(
+    history
+      .filter((m) => m.role === "user" && Array.isArray(m.content))
+      .flatMap((m) => m.content.filter((b) => b.type === "tool_result"))
+      .map((b) => [b.tool_use_id, b.content]),
+  );
   return history
     .filter((m) => m.role === "assistant" && Array.isArray(m.content))
-    .flatMap((m) => m.content.filter((b) => b.type === "tool_use").map((b) => ({ tool: b.name, input: b.input })));
+    .flatMap((m) =>
+      m.content.filter((b) => b.type === "tool_use").map((b) => ({ tool: b.name, input: b.input, result: results.get(b.id) ?? null })),
+    );
 }
 
-async function grade(client, config, scenario, transcript, events, calls = []) {
+async function grade(client, config, scenario, transcript, events, calls = [], nowText = "") {
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 2000,
@@ -60,7 +69,7 @@ async function grade(client, config, scenario, transcript, events, calls = []) {
     messages: [
       {
         role: "user",
-        content: `Rubric: ${scenario.rubric}\n\nConversation:\n\n${formatTranscript(transcript)}\n\nTools the assistant called, in order (JSON):\n${JSON.stringify(calls, null, 2)}\n\nRecords those tools created (JSON):\n${JSON.stringify(events.map((e) => ({ type: e.type, ...e.data })), null, 2)}`,
+        content: `Rubric: ${scenario.rubric}\n\nThe assistant was told the current date and time at the business: ${nowText}. Statements based on it (like "we're closed today") are supported.\n\nConversation:\n\n${formatTranscript(transcript)}\n\nTools the assistant called, in order (JSON):\n${JSON.stringify(calls, null, 2)}\n\nRecords those tools created, with their confirmation or ticket number in "id" (JSON):\n${JSON.stringify(events.map((e) => ({ id: e.id, type: e.type, ...e.data })), null, 2)}`,
       },
     ],
   });
@@ -104,7 +113,7 @@ export async function runScenario({ config, scenario, botClient, judgeClient = n
   }
   const events = readEvents(config.slug).filter((e) => e.session_id === sessionId);
   const checks = checkEvents(scenario.expect, events);
-  const verdict = await grade(judgeClient, config, scenario, transcript, events, toolCalls(history));
+  const verdict = await grade(judgeClient, config, scenario, transcript, events, toolCalls(history), describeNow(now, config.timezone));
   return {
     id: scenario.id,
     title: scenario.title,

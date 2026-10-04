@@ -46,6 +46,7 @@ function validForm(over = {}) {
     zip_codes: "77002, 77003\n77494 and 7700 (typo)",
     services: [{ name: "Drain cleaning", description: "Kitchen and main lines" }, { name: "", description: "" }],
     diagnostic_fee: "$79",
+    how_we_quote: "Upfront price after diagnosis",
     after_hours_fee: "",
     other_prices: "Water heater flush: $150\n\n",
     never_share: "Discounts",
@@ -87,6 +88,7 @@ test("formToConfig builds a complete client config", () => {
   assert.deepEqual(config.booking.arrival_windows, [{ label: "8-12", start_hour: 8 }, { label: "12-4", start_hour: 12 }]);
   assert.equal(config.booking.jobs_per_window, 3);
   assert.deepEqual(config.pricing.other_prices, ["Water heater flush: $150"]);
+  assert.equal(config.pricing.how_we_quote, "Upfront price after diagnosis");
   assert.ok(config.pricing.notes.includes("Never share: Discounts"));
   assert.equal(config.escalation.transfer_phone, "(713) 555-0100");
   assert.equal(config.report.avg_ticket, 300);

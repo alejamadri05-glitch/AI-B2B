@@ -255,6 +255,7 @@ export function formToConfig(form, invite, template = readTemplate()) {
     service_area: { description: str(form.service_area_description), zip_codes: zipCodes },
     services,
     pricing: {
+      how_we_quote: str(form.how_we_quote),
       diagnostic_fee: str(form.diagnostic_fee),
       after_hours_fee: str(form.after_hours_fee),
       other_prices: lines(form.other_prices),

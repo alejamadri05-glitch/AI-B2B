@@ -18,6 +18,7 @@ Send this to a new client (Google Form, Typeform or a 20-minute call). Each answ
 
 ## 3. Services and pricing
 - List your services, with one sentence each → `services`
+- How you give prices for repairs and new systems (upfront price after diagnosis, free estimate…) → `pricing.how_we_quote`
 - Service call / diagnostic fee, and when it's waived → `pricing.diagnostic_fee`
 - After-hours, weekend or holiday fee → `pricing.after_hours_fee`
 - Any other fixed prices you're OK sharing in chat (tune-ups, inspections) → `pricing`
