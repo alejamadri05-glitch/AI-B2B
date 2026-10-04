@@ -5,6 +5,7 @@
 //
 // Writes data/reports/<slug>-<month>.html and .json. With --send, POSTs
 // { to, subject, html } to REPORT_WEBHOOK_URL (an n8n flow that sends the email).
+import "../src/env.js";
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, listClientSlugs, loadClientConfig } from "../src/store.js";

@@ -5,6 +5,7 @@
 //
 // Send the form link to the client. The review link is only for you.
 // With --website, Claude pre-fills the form from the site (takes about a minute).
+import "../src/env.js";
 import { createInvite, links, listInvites, profileToForm } from "../src/onboarding.js";
 import { extractProfile } from "../src/demo-builder.js";
 

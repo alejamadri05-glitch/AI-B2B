@@ -6,6 +6,7 @@
 //
 // Bookings and leads go to a temporary folder and webhooks are switched off,
 // so the client never sees test data. Exits with code 1 if anything fails.
+import "../src/env.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

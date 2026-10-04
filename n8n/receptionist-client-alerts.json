@@ -1,0 +1,229 @@
+{
+  "name": "Receptionist - Client alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist-events",
+        "options": {}
+      },
+      "id": "c83de91b-700d-4570-9e7a-3ac719cc5948",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "53706b01-846f-494e-80d5-9c1ea0e590e3"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "04f5af32-407b-41e5-bb9c-c24ace3b7a7b",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "booking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "booking"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b0c44c28-6447-4f69-97db-3aa303e37621",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "lead",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lead"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "34988bae-fca2-485f-9a53-551c633d2ac6",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "escalation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalation"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4a6c8f5c-3dea-441f-9b44-abcd56070e1f",
+      "name": "By type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.alerts.email }}",
+        "subject": "=New job booked: {{ $json.body.data.customer_name }}, {{ $json.body.data.date }} {{ $json.body.data.arrival_window }}",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>Your AI receptionist booked a job.</p><table cellpadding=\"4\"><tr><td><b>Customer</b></td><td>{{ $json.body.data.customer_name }}</td></tr><tr><td><b>Phone</b></td><td>{{ $json.body.data.phone }}</td></tr><tr><td><b>Address</b></td><td>{{ $json.body.data.address }} {{ $json.body.data.zip_code }}</td></tr><tr><td><b>Service</b></td><td>{{ $json.body.data.service_type }}</td></tr><tr><td><b>Issue</b></td><td>{{ $json.body.data.issue_description }}</td></tr><tr><td><b>When</b></td><td>{{ $json.body.data.date }}, {{ $json.body.data.arrival_window }}</td></tr><tr><td><b>Notes</b></td><td>{{ $json.body.data.notes || '' }}</td></tr><tr><td><b>Confirmation</b></td><td>{{ $json.body.id }}</td></tr></table></div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "78a98fcd-e971-4f2d-a51f-92c677d404ee",
+      "name": "New booking",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        -180
+      ],
+      "webhookId": "c3fd9fc8-7fd8-460d-bcf0-24cb600b56be"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.alerts.email }}",
+        "subject": "=New lead: {{ $json.body.data.customer_name || 'website visitor' }} ({{ $json.body.data.reason }})",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>Your AI receptionist captured a lead. Call them back soon.</p><table cellpadding=\"4\"><tr><td><b>Name</b></td><td>{{ $json.body.data.customer_name || '-' }}</td></tr><tr><td><b>Phone</b></td><td>{{ $json.body.data.phone || '-' }}</td></tr><tr><td><b>Email</b></td><td>{{ $json.body.data.email || '-' }}</td></tr><tr><td><b>ZIP</b></td><td>{{ $json.body.data.zip_code || '-' }}</td></tr><tr><td><b>Service</b></td><td>{{ $json.body.data.service_type || '-' }}</td></tr><tr><td><b>Summary</b></td><td>{{ $json.body.data.summary }}</td></tr></table></div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "402c8cd8-bf9f-4105-bc34-703d4392b27d",
+      "name": "New lead",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "webhookId": "a8073254-aad1-4b1d-94db-567b139407b6"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.alerts.email }}",
+        "subject": "=URGENT ({{ $json.body.data.reason }}): {{ $json.body.data.customer_name || 'customer' }} {{ $json.body.data.phone || '' }}",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p style=\"color:#c62828;font-weight:bold\">Your AI receptionist flagged an urgent request ({{ $json.body.data.urgency }}).</p><table cellpadding=\"4\"><tr><td><b>Reason</b></td><td>{{ $json.body.data.reason }}</td></tr><tr><td><b>Name</b></td><td>{{ $json.body.data.customer_name || '-' }}</td></tr><tr><td><b>Phone</b></td><td>{{ $json.body.data.phone || '-' }}</td></tr><tr><td><b>Summary</b></td><td>{{ $json.body.data.summary }}</td></tr></table></div>",
+        "options": {
+          "appendAttribution": false,
+          "bccList": "REPLACE_WITH_YOUR_EMAIL"
+        }
+      },
+      "id": "ac44039e-3d26-44ad-a505-2d81962dfd07",
+      "name": "Urgent alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        180
+      ],
+      "webhookId": "bce2d249-dc43-4bc6-b7f7-a9946b7d3a8b"
+    },
+    {
+      "parameters": {
+        "content": "## Setup\n1. Open each Gmail node and pick your Gmail credential.\n2. In \"Urgent alert\", replace REPLACE_WITH_YOUR_EMAIL (BCC to you).\n3. Activate the workflow, open the Webhook node, copy the **Production URL** and set it as WEBHOOK_URL on the server.\n\nLater: add a Twilio SMS node after \"Urgent alert\" (to body.alerts.phone) once A2P 10DLC is approved.",
+        "height": 260,
+        "width": 420
+      },
+      "id": "7b17f64b-9885-45ac-840b-077bdc287a24",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -340
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "By type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "By type": {
+      "main": [
+        [
+          {
+            "node": "New booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "New lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Urgent alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

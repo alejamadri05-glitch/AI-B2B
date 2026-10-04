@@ -1,0 +1,221 @@
+{
+  "name": "Receptionist - Monthly reports",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "a661422a-4e42-4ca2-b792-1eb001679cd8",
+      "name": "1st of the month, 8 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://REPLACE-WITH-YOUR-SERVER/api/admin/clients",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WITH_ADMIN_TOKEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "adeaf1ce-c50a-4355-bea5-d6b83fec82be",
+      "name": "List clients",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "clients",
+        "options": {}
+      },
+      "id": "3f5c6215-e23c-43e1-9740-5b51d512b7ea",
+      "name": "One per client",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b48377a8-5d8e-4966-b9c7-ef9a3507232e",
+              "leftValue": "={{ $json.report_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f5ac1fd5-eb5c-477e-92bc-99c7586d4111",
+      "name": "Has report email",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://REPLACE-WITH-YOUR-SERVER/api/report?client={{ $json.slug }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REPLACE_WITH_ADMIN_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "1dcb7a6a-7628-4d31-a28d-97a670a944e9",
+      "name": "Build report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "bccList": "REPLACE_WITH_YOUR_EMAIL"
+        }
+      },
+      "id": "e33a798e-47df-40d0-9f78-5ad50a9942de",
+      "name": "Send report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "webhookId": "7b948eb6-19c8-4d41-b768-44d8e15b1f18"
+    },
+    {
+      "parameters": {
+        "content": "## Setup\n1. In both HTTP Request nodes, replace REPLACE-WITH-YOUR-SERVER and REPLACE_WITH_ADMIN_TOKEN (better: move the header into a Header Auth credential).\n2. Pick your Gmail credential and replace REPLACE_WITH_YOUR_EMAIL (BCC).\n3. Test once with \"Execute workflow\", then activate. Check the workflow's timezone in Settings (America/Chicago).",
+        "height": 260,
+        "width": 420
+      },
+      "id": "e695cae6-582a-4c9a-9104-35230821b5f0",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -340
+      ]
+    }
+  ],
+  "connections": {
+    "1st of the month, 8 AM": {
+      "main": [
+        [
+          {
+            "node": "List clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List clients": {
+      "main": [
+        [
+          {
+            "node": "One per client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One per client": {
+      "main": [
+        [
+          {
+            "node": "Has report email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has report email": {
+      "main": [
+        [
+          {
+            "node": "Build report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build report": {
+      "main": [
+        [
+          {
+            "node": "Send report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

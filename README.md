@@ -32,11 +32,13 @@ onboarding/         Formulario para el cliente (inglés) y checklist de lanzamie
 test/               Pruebas con un cliente simulado (no gastan API)
 ```
 
+> **¿Primera vez?** Sigue [SETUP.md](SETUP.md): la puesta en marcha paso a paso (Claude, Render, n8n, Outscraper). `npm run doctor` te dice en cualquier momento qué falta configurar.
+
 ## Arranque rápido
 
 ```bash
 npm install
-export ANTHROPIC_API_KEY=sk-ant-...      # tu clave de console.anthropic.com
+cp .env.example .env                    # y pega tu clave en ANTHROPIC_API_KEY
 npm start
 ```
 

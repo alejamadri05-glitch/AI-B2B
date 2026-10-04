@@ -1,0 +1,280 @@
+{
+  "name": "Receptionist - Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "receptionist-onboarding",
+        "options": {}
+      },
+      "id": "49c270c3-183d-4422-9fd6-e96d14561a71",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "de39fd23-e6ed-431a-a86a-70d22bc6c32f"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2e4081e6-1ce8-451c-8951-952e1538253e",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "submitted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "submitted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4943c14f-b9bc-4d13-9dd2-f2c6e59679ee",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "ready_for_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready_for_review"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f4bfbe25-df3c-42a4-9cd5-32acb82e90c4",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "changes_requested",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "changes_requested"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "717c5396-373c-4572-92f4-cb2fd68ea28a",
+                    "leftValue": "={{ $json.body.type }}",
+                    "rightValue": "live",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "live"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c92ca53-19d0-48e5-9188-355bfe44aa0d",
+      "name": "By type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "REPLACE_WITH_YOUR_EMAIL",
+        "subject": "=Formulario recibido: {{ $json.body.business_name }}",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>{{ $json.body.business_name }} envió el formulario de onboarding. Las pruebas automáticas están corriendo; te llegará otro correo cuando terminen.</p></div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "be469c87-c2a8-451d-b251-ee909cd10ba4",
+      "name": "You: form submitted",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        500,
+        -270
+      ],
+      "webhookId": "6646df73-5c7c-48c3-b0cd-4b25a54f55a7"
+    },
+    {
+      "parameters": {
+        "sendTo": "REPLACE_WITH_YOUR_EMAIL",
+        "subject": "=Listo para revisar: {{ $json.body.business_name }} ({{ $json.body.qa.error ? 'las pruebas fallaron' : $json.body.qa.passed + '/' + $json.body.qa.total + ' pruebas' }})",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>{{ $json.body.business_name }} está listo para tu revisión.</p><p>Pruebas: {{ $json.body.qa.error ? 'no corrieron (' + $json.body.qa.error + ')' : $json.body.qa.passed + ' de ' + $json.body.qa.total + ' pasan' }}</p><p><a href=\"{{ $json.body.links.review }}\">Abrir la revisión</a> (enlace privado, no lo reenvíes)</p></div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "071136f2-61ea-4880-8598-613349afd4c1",
+      "name": "You: ready for review",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        500,
+        -90
+      ],
+      "webhookId": "c060daf7-6ad3-4a08-aa70-08e697948b28"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.contact_email }}",
+        "subject": "=A few changes before your AI receptionist goes live",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>Hi,</p><p>Thanks for filling out the setup form for {{ $json.body.business_name }}. Before we launch your AI receptionist, we need a few changes:</p><blockquote style=\"border-left:3px solid #1f6feb;padding-left:10px\">{{ $json.body.note }}</blockquote><p><a href=\"{{ $json.body.links.form }}\">Open your setup form</a> - your previous answers are already there.</p><p>Thanks!</p></div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "32f6ef9f-07f2-48a2-9b69-a631b180ee4b",
+      "name": "Client: changes requested",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        500,
+        90
+      ],
+      "webhookId": "b471fcd4-f15e-4404-9ca1-8a9328c0dc14"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.contact_email || $json.body.report_email }}",
+        "subject": "=Your AI receptionist for {{ $json.body.business_name }} is live",
+        "emailType": "html",
+        "message": "=<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#1c1f24\"><p>Hi,</p><p>Your AI receptionist is ready. Two things:</p><p><b>1. Add it to your website.</b> Paste this line before the closing &lt;/body&gt; tag (or send it to whoever manages your site):</p><pre style=\"background:#f4f5f7;padding:10px;border-radius:6px;white-space:pre-wrap\">{{ $json.body.links.widget.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;') }}</pre><p><b>2. Bookmark your dashboard.</b> Every booking, lead, alert and conversation shows up here:<br><a href=\"{{ $json.body.links.dashboard }}\">{{ $json.body.links.dashboard }}</a></p><p>You'll get an email for every booking and urgent request, and a report on the 1st of each month. Reply to this email any time you want to change hours, prices or services.</p></div>",
+        "options": {
+          "appendAttribution": false,
+          "bccList": "REPLACE_WITH_YOUR_EMAIL"
+        }
+      },
+      "id": "9bdcc458-f6fc-4558-b36c-8cf7a687d15d",
+      "name": "Client: live",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        500,
+        270
+      ],
+      "webhookId": "f043c6fd-9c1d-4f0c-b8ed-ccadc549df23"
+    },
+    {
+      "parameters": {
+        "content": "## Setup\n1. Pick your Gmail credential in the 4 Gmail nodes.\n2. Replace REPLACE_WITH_YOUR_EMAIL in the first two nodes and in the BCC of \"Client: live\".\n3. Activate, copy the Webhook **Production URL** and set it as ONBOARDING_WEBHOOK_URL on the server.",
+        "height": 260,
+        "width": 420
+      },
+      "id": "6ca38b9e-3dcb-45e7-a900-31b4349e6ace",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -340
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "By type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "By type": {
+      "main": [
+        [
+          {
+            "node": "You: form submitted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "You: ready for review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Client: changes requested",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Client: live",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

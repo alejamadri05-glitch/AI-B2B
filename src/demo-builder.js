@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { ROOT_DIR } from "./store.js";
+import { ROOT_DIR, liveClientsDir } from "./store.js";
 
 const MODEL = process.env.MODEL || "claude-opus-5-5";
 
@@ -130,7 +130,8 @@ export function profileToConfig(profile, slug, url) {
 }
 
 export function writeClientConfig(config) {
-  const file = path.join(ROOT_DIR, "clients", `${config.slug}.json`);
+  // Locally this is the repo's clients/ folder; on the server, the persistent disk.
+  const file = path.join(liveClientsDir(), `${config.slug}.json`);
   fs.writeFileSync(file, JSON.stringify(config, null, 2) + "\n");
   return file;
 }

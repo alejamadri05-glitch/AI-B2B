@@ -1,0 +1,27 @@
+# Render Blueprint: New > Blueprint > pick this repo. A persistent disk needs a
+# paid instance (Starter or above); without it, published clients and data are
+# lost on every deploy.
+services:
+  - type: web
+    name: ai-receptionist
+    runtime: docker
+    plan: starter
+    region: ohio
+    healthCheckPath: /healthz
+    disk:
+      name: receptionist-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: PUBLIC_URL
+        sync: false
+      - key: WEBHOOK_URL
+        sync: false
+      - key: ONBOARDING_WEBHOOK_URL
+        sync: false
+      - key: OUTSCRAPER_API_KEY
+        sync: false

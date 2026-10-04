@@ -5,9 +5,10 @@
 // Claude reads the site with the web fetch tool, extracts the business profile,
 // and this script writes clients/<slug>.json from clients/_template.json.
 // ALWAYS review the generated file before showing the demo to the prospect.
+import "../src/env.js";
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT_DIR, isValidSlug } from "../src/store.js";
+import { ROOT_DIR, isValidSlug, liveClientsDir } from "../src/store.js";
 import { extractProfile, profileToConfig, writeClientConfig } from "../src/demo-builder.js";
 
 function parseArgs(argv) {
@@ -25,7 +26,7 @@ if (!url || !isValidSlug(slug)) {
   console.error("The slug must be lowercase letters, digits and dashes.");
   process.exit(1);
 }
-const outFile = path.join(ROOT_DIR, "clients", `${slug}.json`);
+const outFile = path.join(liveClientsDir(), `${slug}.json`);
 if (fs.existsSync(outFile) && !force) {
   console.error(`${outFile} already exists. Use --force to overwrite.`);
   process.exit(1);

@@ -6,6 +6,7 @@
 //
 // Each paid step only runs for the top leads and is saved in
 // data/prospects/<batch>/leads.json, so re-running never pays twice.
+import "../src/env.js";
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT_DIR, isValidSlug, loadClientConfig } from "../src/store.js";

@@ -114,7 +114,16 @@ async function notifyWebhook(config, record) {
     await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ client: config.slug, business_name: config.business_name, ...record }),
+      body: JSON.stringify({
+        client: config.slug,
+        business_name: config.business_name,
+        // Where n8n should send the alert for this client.
+        alerts: {
+          email: config._onboarding?.alerts_email || config.report?.email || null,
+          phone: config._onboarding?.alerts_phone || null,
+        },
+        ...record,
+      }),
       signal: AbortSignal.timeout(5000),
     });
   } catch (err) {

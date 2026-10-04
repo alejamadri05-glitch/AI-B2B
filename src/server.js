@@ -6,16 +6,19 @@
 //   GET  /api/events?client=...     events for the dashboard (token: ADMIN_TOKEN or the client's dashboard_token)
 //   GET  /api/conversations?client=... conversation log for the dashboard (same token)
 //   GET  /api/report?client=...&month=YYYY-MM  monthly report { to, subject, html, metrics } (ADMIN_TOKEN)
+//   GET  /healthz                    for the hosting provider's health check
+//   GET  /api/admin/clients         live (non-demo) clients, for n8n's monthly report loop (ADMIN_TOKEN)
 //   POST /api/admin/invites         { business_name, contact_email?, website? } -> onboarding links (ADMIN_TOKEN)
 //   GET|POST /api/onboarding/<invite>             the client's onboarding form
 //   GET  /api/onboarding/<invite>/review?key=...  config + QA results for your review
 //   POST /api/onboarding/<invite>/{publish|changes|retest}?key=...
+import "./env.js";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { runTurn, MODEL } from "./agent.js";
-import { ROOT_DIR, appendMessage, dataDir, isValidSlug, loadClientConfig, readConversations, readEvents } from "./store.js";
+import { ROOT_DIR, appendMessage, dataDir, isValidSlug, listClientSlugs, loadClientConfig, readConversations, readEvents } from "./store.js";
 import { buildReport, previousMonth } from "./report.js";
 import { extractProfile } from "./demo-builder.js";
 import * as onboarding from "./onboarding.js";
@@ -205,6 +208,17 @@ const server = http.createServer(async (req, res) => {
       const config = clientFromQuery(url);
       if (!canView(url, config)) throw new HttpError(401, "Invalid token");
       return send(res, 200, { conversations: readConversations(config.slug).slice(0, 200) });
+    }
+
+    if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { ok: true });
+
+    if (req.method === "GET" && url.pathname === "/api/admin/clients") {
+      if (!isAdmin(req, url)) throw new HttpError(401, "Invalid token");
+      const clients = listClientSlugs()
+        .map(loadClientConfig)
+        .filter((c) => c && !c.demo)
+        .map((c) => ({ slug: c.slug, business_name: c.business_name, report_email: c.report?.email ?? null }));
+      return send(res, 200, { clients });
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/invites") {
