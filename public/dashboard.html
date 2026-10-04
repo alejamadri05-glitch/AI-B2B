@@ -17,6 +17,7 @@
       </div>
       <p class="live-dot">Live · updates every 5 seconds</p>
     </div>
+    <div class="banner" id="demo-note" hidden>This demo dashboard shows only what you did in your own chat. A real client sees every customer's bookings, leads and conversations here. <a id="back-to-chat" href="#">Back to the chat</a></div>
     <div class="banner error" id="dash-error" hidden></div>
     <div class="stats">
       <div class="stat"><div class="n" id="n-booking"><span class="skeleton" style="width: 2.5rem"></span></div><div class="label"><span data-icon="calendar-check"></span>Jobs booked</div></div>
@@ -38,6 +39,8 @@
     const params = new URLSearchParams(location.search);
     const slug = params.get("client") || "demo-hvac";
     const token = params.get("token") || "";
+    const session = params.get("session") || "";
+    let isDemo = Boolean(session);
     const $ = (id) => document.getElementById(id);
 
     fetch(`/api/clients/${encodeURIComponent(slug)}`)
@@ -45,6 +48,9 @@
       .catch(() => null)
       .then((p) => {
         if (!p) return;
+        isDemo = Boolean(p.demo);
+        $("demo-note").hidden = !(p.demo && session && !token);
+        $("back-to-chat").href = `/?client=${encodeURIComponent(slug)}`;
         $("title").textContent = p.business_name;
         document.title = `${p.business_name} · Dashboard`;
         applyBrand(p.brand_color);
@@ -72,7 +78,9 @@
       const list = $("events");
       list.replaceChildren();
       if (!events.length) {
-        list.append(empty("list-checks", "No bookings or leads yet", "When a customer books a visit, leaves their details or reports an emergency in the chat, it shows up here within seconds."));
+        list.append(empty("list-checks", "No bookings or leads yet", isDemo
+          ? "Go back to the chat and book a visit or report an emergency: it shows up here within seconds."
+          : "When a customer books a visit, leaves their details or reports an emergency in the chat, it shows up here within seconds."));
       }
       for (const e of events) {
         const card = document.createElement("article");
@@ -136,7 +144,7 @@
     }
 
     async function refresh() {
-      const q = `client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
+      const q = `client=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}&session=${encodeURIComponent(session)}`;
       try {
         const [events, conversations] = await Promise.all([fetch(`/api/events?${q}`), fetch(`/api/conversations?${q}`)]);
         if (!events.ok) {

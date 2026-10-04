@@ -77,7 +77,8 @@ async function loadProfile() {
   }
   if (p.demo) {
     $("intro-title").textContent = `${p.business_name}'s 24/7 AI receptionist`;
-    $("dashboard-link").href = `/dashboard.html?client=${encodeURIComponent(slug)}`;
+    // The demo dashboard shows this visitor only their own chat.
+    $("dashboard-link").href = `/dashboard.html?client=${encodeURIComponent(slug)}&session=${encodeURIComponent(sessionId())}`;
   } else {
     // A real client's page is for their customers, not a sales demo.
     document.title = p.business_name;

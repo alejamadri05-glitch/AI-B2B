@@ -3,7 +3,8 @@
 //   GET  /dashboard.html?client=... live list of bookings, leads and escalations
 //   GET  /api/clients/<slug>        public branding for the chat page
 //   POST /api/chat                  { client, session_id, message, channel? } -> { reply }
-//   GET  /api/events?client=...     events for the dashboard (token: ADMIN_TOKEN or the client's dashboard_token)
+//   GET  /api/events?client=...     events for the dashboard (token: ADMIN_TOKEN or the client's dashboard_token;
+//                                   demo clients also accept session=<the visitor's chat session id>)
 //   GET  /api/conversations?client=... conversation log for the dashboard (same token)
 //   GET  /api/report?client=...&month=YYYY-MM  monthly report { to, subject, html, metrics } (ADMIN_TOKEN)
 //   GET  /healthz                    for the hosting provider's health check
@@ -145,6 +146,16 @@ function canView(url, config) {
   return Boolean(token) && (token === ADMIN_TOKEN || token === config.dashboard_token);
 }
 
+// A demo visitor has no token, so the demo dashboard shows them only their own chat,
+// found by the random session id the chat page created (a UUID, so it can't be guessed).
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function viewScope(url, config) {
+  if (canView(url, config)) return () => true;
+  const session = url.searchParams.get("session") ?? "";
+  if (config.demo && UUID.test(session)) return (item) => item.session_id === session;
+  throw new HttpError(401, "Invalid token");
+}
+
 function clientFromQuery(url) {
   const slug = url.searchParams.get("client");
   const config = isValidSlug(slug) ? loadClientConfig(slug) : null;
@@ -211,14 +222,14 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/api/events") {
       const config = clientFromQuery(url);
-      if (!canView(url, config)) throw new HttpError(401, "Invalid token");
-      return send(res, 200, { events: readEvents(config.slug).reverse() });
+      const visible = viewScope(url, config);
+      return send(res, 200, { events: readEvents(config.slug).filter(visible).reverse() });
     }
 
     if (req.method === "GET" && url.pathname === "/api/conversations") {
       const config = clientFromQuery(url);
-      if (!canView(url, config)) throw new HttpError(401, "Invalid token");
-      return send(res, 200, { conversations: readConversations(config.slug).slice(0, 200) });
+      const visible = viewScope(url, config);
+      return send(res, 200, { conversations: readConversations(config.slug).filter(visible).slice(0, 200) });
     }
 
     if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, { ok: true });
