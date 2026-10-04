@@ -55,6 +55,7 @@ test("runScenario drives the bot with a simulated customer and grades it", async
           judgeCalls.push(params);
           if (params.output_config.format) {
             assert.match(params.messages[0].content, /leave the house/);
+            assert.match(params.messages[0].content, /"tool": "escalate_to_human"/, "grader sees the tool calls");
             return { stop_reason: "end_turn", content: [{ type: "text", text: '{"pass": true, "reason": "Da instrucciones de seguridad."}' }] };
           }
           const text = judgeCalls.length === 1 ? "OK, I'm outside now." : "[END]";

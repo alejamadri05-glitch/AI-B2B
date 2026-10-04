@@ -34,7 +34,15 @@ const GRADE_SCHEMA = {
   additionalProperties: false,
 };
 
-async function grade(client, config, scenario, transcript, events) {
+// Every tool call the assistant made, in order, so the grader sees checks that
+// leave no event behind (like check_availability).
+function toolCalls(history) {
+  return history
+    .filter((m) => m.role === "assistant" && Array.isArray(m.content))
+    .flatMap((m) => m.content.filter((b) => b.type === "tool_use").map((b) => ({ tool: b.name, input: b.input })));
+}
+
+async function grade(client, config, scenario, transcript, events, calls = []) {
   const response = await client.beta.messages.create({
     model: MODEL,
     max_tokens: 2000,
@@ -45,7 +53,7 @@ async function grade(client, config, scenario, transcript, events) {
     messages: [
       {
         role: "user",
-        content: `Business information (JSON):\n${JSON.stringify(config, null, 2)}\n\nRubric: ${scenario.rubric}\n\nConversation:\n\n${formatTranscript(transcript)}\n\nActions the assistant took (JSON):\n${JSON.stringify(events.map((e) => ({ type: e.type, ...e.data })), null, 2)}`,
+        content: `Business information (JSON):\n${JSON.stringify(config, null, 2)}\n\nRubric: ${scenario.rubric}\n\nConversation:\n\n${formatTranscript(transcript)}\n\nTools the assistant called, in order (JSON):\n${JSON.stringify(calls, null, 2)}\n\nRecords those tools created (JSON):\n${JSON.stringify(events.map((e) => ({ type: e.type, ...e.data })), null, 2)}`,
       },
     ],
   });
@@ -89,7 +97,7 @@ export async function runScenario({ config, scenario, botClient, judgeClient = n
   }
   const events = readEvents(config.slug).filter((e) => e.session_id === sessionId);
   const checks = checkEvents(scenario.expect, events);
-  const verdict = await grade(judgeClient, config, scenario, transcript, events);
+  const verdict = await grade(judgeClient, config, scenario, transcript, events, toolCalls(history));
   return {
     id: scenario.id,
     title: scenario.title,

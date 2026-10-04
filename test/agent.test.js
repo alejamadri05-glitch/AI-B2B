@@ -71,8 +71,9 @@ test("booking a full turn: check availability, book, reply", async () => {
   const first = client.calls[0];
   assert.equal(first.fallbacks, "default");
   assert.equal(first.tools.length, 4);
-  assert.match(first.system, /Bluebonnet Heating & Air/);
-  assert.doesNotMatch(first.system, /webhook_url/);
+  assert.match(first.system[0].text, /Bluebonnet Heating & Air/);
+  assert.doesNotMatch(first.system[0].text, /webhook_url/);
+  assert.deepEqual(first.system[0].cache_control, { type: "ephemeral" }, "fixed instructions get their own cache point");
 
   const bookings = readEvents(config.slug).filter((e) => e.type === "booking");
   assert.equal(bookings.length, 1);
@@ -81,7 +82,7 @@ test("booking a full turn: check availability, book, reply", async () => {
   // The second turn appends to the same history; the system prompt is identical (cacheable).
   const client2 = fakeClient([{ stop_reason: "end_turn", content: [{ type: "text", text: "Anything else?" }] }]);
   await runTurn({ config, history, userText: "thanks", sessionId: "s-123456", now: NOW, client: client2 });
-  assert.equal(client2.calls[0].system, first.system);
+  assert.deepEqual(client2.calls[0].system, first.system);
   assert.equal(history.length, 10);
 });
 

@@ -135,7 +135,8 @@
       "Sunday"
     ],
     "days_ahead": 7,
-    "jobs_per_window": 2
+    "jobs_per_window": 2,
+    "what_happens_next": "The technician calls the customer when on the way."
   },
   "faqs": [
     {

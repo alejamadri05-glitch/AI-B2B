@@ -43,8 +43,10 @@ export async function runTurn({ config, history, userText, sessionId, channel = 
         betas: [FALLBACK_BETA],
         fallbacks: "default",
         output_config: { effort: EFFORT },
+        // Two cache points: one at the end of the fixed instructions, shared by every
+        // conversation of this client, plus the automatic one for the growing history.
         cache_control: { type: "ephemeral" },
-        system,
+        system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
         tools: TOOLS,
         messages: history,
       });
