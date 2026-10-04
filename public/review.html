@@ -42,6 +42,7 @@
 
     <section id="live-section" hidden>
       <h2>Publicado</h2>
+      <p>Página de chat del cliente (sirve sin sitio web: Google, Facebook, mensajes): <a id="chat-link" target="_blank" rel="noopener"></a></p>
       <p>Código para el sitio del cliente:</p>
       <pre id="widget-code"></pre>
       <p>Panel del cliente: <a id="dashboard-link" target="_blank" rel="noopener"></a></p>
@@ -149,6 +150,8 @@
       $("live-section").hidden = data.status !== "live";
       if (data.status === "live") {
         $("widget-code").textContent = data.links.widget;
+        $("chat-link").href = data.links.chat;
+        $("chat-link").textContent = data.links.chat;
         $("dashboard-link").href = data.links.dashboard;
         $("dashboard-link").textContent = data.links.dashboard;
       }

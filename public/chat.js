@@ -51,9 +51,17 @@ async function loadProfile() {
   $("business-name").textContent = p.business_name;
   $("agent-line").textContent = `${p.agent_name} · Virtual assistant · replies instantly`;
   $("avatar").textContent = (p.agent_name || "A").charAt(0);
-  $("intro-title").textContent = `${p.business_name}'s 24/7 AI receptionist`;
   $("demo-badge").hidden = !p.demo;
-  $("dashboard-link").href = `/dashboard.html?client=${encodeURIComponent(slug)}`;
+  if (p.demo) {
+    $("intro-title").textContent = `${p.business_name}'s 24/7 AI receptionist`;
+    $("dashboard-link").href = `/dashboard.html?client=${encodeURIComponent(slug)}`;
+  } else {
+    // A real client's page is for their customers, not a sales demo.
+    document.title = p.business_name;
+    $("intro-title").textContent = p.business_name;
+    $("intro-text").textContent = "Questions, a quote or a service visit? Chat with us any time: we reply in seconds and can book your appointment.";
+    $("dashboard-link").closest("p").hidden = true;
+  }
   addMessage(p.greeting, "in");
 }
 

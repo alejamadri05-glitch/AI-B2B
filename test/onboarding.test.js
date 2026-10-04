@@ -151,6 +151,7 @@ test("full lifecycle: submit, test, request changes, resubmit, publish", async (
   assert.deepEqual(types, ["submitted", "ready_for_review", "changes_requested", "submitted", "ready_for_review", "live"]);
   const liveNote = notifications.find((n) => n.slug === invite.slug && n.type === "live");
   assert.match(liveNote.links.widget, new RegExp(`data-client="${invite.slug}"`));
+  assert.equal(liveNote.links.chat, `https://app.example.com/?client=${invite.slug}`);
   assert.match(liveNote.links.dashboard, new RegExp(`token=${live.dashboard_token}`));
   assert.match(liveNote.links.form, /^https:\/\/app\.example\.com\/onboarding\.html\?invite=/);
 });

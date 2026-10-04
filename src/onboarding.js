@@ -29,6 +29,8 @@ export function links(invite) {
   const base = publicUrl();
   return {
     form: `${base}/onboarding.html?invite=${invite.token}`,
+    // The client's own chat page: works without a website (Google profile, Facebook, texts).
+    chat: `${base}/?client=${invite.slug}`,
     review: `${base}/review.html?invite=${invite.token}&key=${invite.approve_key}`,
     dashboard: `${base}/dashboard.html?client=${invite.slug}&token=${invite.config?.dashboard_token ?? ""}`,
     widget: `<script src="${base}/widget.js" data-client="${invite.slug}" data-color="${invite.config?.brand_color ?? "#1f6feb"}" defer></script>`,
