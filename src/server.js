@@ -8,6 +8,7 @@
 //   GET  /api/report?client=...&month=YYYY-MM  monthly report { to, subject, html, metrics } (ADMIN_TOKEN)
 //   GET  /healthz                    for the hosting provider's health check
 //   GET  /api/admin/clients         live (non-demo) clients, for n8n's monthly report loop (ADMIN_TOKEN)
+//   GET  /api/admin/invites         all onboarding invites with their links (ADMIN_TOKEN); UI in /admin.html
 //   POST /api/admin/invites         { business_name, contact_email?, website? } -> onboarding links (ADMIN_TOKEN)
 //   GET|POST /api/onboarding/<invite>             the client's onboarding form
 //   GET  /api/onboarding/<invite>/review?key=...  config + QA results for your review
@@ -219,6 +220,18 @@ const server = http.createServer(async (req, res) => {
         .filter((c) => c && !c.demo)
         .map((c) => ({ slug: c.slug, business_name: c.business_name, report_email: c.report?.email ?? null }));
       return send(res, 200, { clients });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/admin/invites") {
+      if (!isAdmin(req, url)) throw new HttpError(401, "Invalid token");
+      const invites = onboarding
+        .listInvites()
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+        .map((i) => {
+          const { business_name, slug, status, contact_email, updated_at, qa, links } = onboarding.reviewInvite(i);
+          return { business_name, slug, status, contact_email, updated_at, qa: qa && { passed: qa.passed, total: qa.total, error: qa.error }, links };
+        });
+      return send(res, 200, { invites });
     }
 
     if (req.method === "POST" && url.pathname === "/api/admin/invites") {

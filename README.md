@@ -135,7 +135,7 @@ Para ver el correo en el navegador, agrega `&format=html` a la URL.
 
 Del pago a "en vivo" sin configurar nada a mano:
 
-1. **Invitación.** `npm run onboard -- --business "Bayou Plumbing" --email owner@bayou.com --website https://bayou.com`. También puede hacerla n8n después del pago, con `POST /api/admin/invites` y `Authorization: Bearer <ADMIN_TOKEN>`. Si hay sitio web, Claude prellena el formulario.
+1. **Invitación.** Desde `/admin.html` (entras con tu `ADMIN_TOKEN`; ahí también ves todas las invitaciones y sus enlaces), o con `npm run onboard -- --business "Bayou Plumbing" --email owner@bayou.com --website https://bayou.com`. También puede hacerla n8n después del pago, con `POST /api/admin/invites` y `Authorization: Bearer <ADMIN_TOKEN>`. Si hay sitio web, Claude prellena el formulario.
 2. **El cliente llena el formulario** (`/onboarding.html?invite=…`, en inglés). Son 10 secciones con validación y autoguardado en su navegador.
 3. **Pruebas automáticas.** Al enviar, se arma la configuración y corren los 11 escenarios de `npm run qa` en un proceso aparte, sin tocar datos reales. Cada corrida cuesta unas 11 conversaciones de Claude.
 4. **Tu revisión** (`/review.html?invite=…&key=…`, en español). Ves los resultados con cada conversación, el resumen de la configuración, y tres botones: **Publicar**, **Repetir pruebas** o **Pedir cambios** (el cliente recibe tu nota y el formulario se reabre).

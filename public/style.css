@@ -159,3 +159,4 @@ dl.summary dd { margin: 0; overflow-wrap: anywhere; }
   dl.summary { grid-template-columns: 1fr; }
   dl.summary dd { margin-bottom: 6px; }
 }
+a.button-link { display: inline-block; font-weight: 600; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }

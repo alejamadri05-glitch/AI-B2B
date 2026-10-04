@@ -53,7 +53,7 @@ Estos archivos se escribieron a mano y no se han importado en una cuenta real. S
 
 - [ ] En Render → Shell (o en tu computadora, con los mismos valores en `.env`): `npm run doctor -- --ping`. Llama al servidor público y manda un evento de prueba a cada webhook. Revisa en n8n → Executions que llegaron.
 - [ ] **Ensayo con un cliente falso**, usando tu propio correo como si fueras el dueño:
-  1. `npm run onboard -- --business "Test Plumbing" --email TU_CORREO` (en el Shell de Render).
+  1. Abre `<PUBLIC_URL>/admin.html`, entra con tu `ADMIN_TOKEN` y crea una invitación para "Test Plumbing" con tu correo (o, en el Shell de Render, `npm run onboard -- --business "Test Plumbing" --email TU_CORREO`).
   2. Abre el enlace del formulario, llénalo y envíalo. Te debe llegar "Formulario recibido" y, unos minutos después, "Listo para revisar".
   3. Abre la revisión y publica. Te debe llegar el correo de bienvenida con el código del widget.
   4. Abre `<PUBLIC_URL>/?client=test-plumbing`, agenda una cita y escribe "I smell gas". Te deben llegar el correo de la cita y la alerta urgente.

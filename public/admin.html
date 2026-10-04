@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Administración</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="form-page">
+    <p class="eyebrow">Administración</p>
+    <h1>Clientes y onboarding</h1>
+    <div class="banner error" id="error" hidden></div>
+
+    <fieldset id="login">
+      <legend>Acceso</legend>
+      <label>ADMIN_TOKEN (está en Render → Environment)
+        <input id="token" type="password" autocomplete="current-password">
+      </label>
+      <label class="check"><input type="checkbox" id="remember"> Recordar en este navegador</label>
+      <div class="actions"><button type="button" class="primary" id="enter">Entrar</button></div>
+    </fieldset>
+
+    <div id="app" hidden>
+      <fieldset>
+        <legend>Nueva invitación de onboarding</legend>
+        <label>Nombre del negocio<input id="business" placeholder="Bayou Plumbing"></label>
+        <div class="row">
+          <label>Correo del dueño<input id="email" type="email" placeholder="owner@bayouplumbing.com"></label>
+          <label>Sitio web (opcional)<input id="website" type="url" placeholder="https://"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="prefill" checked> Prellenar el formulario desde el sitio web (tarda ~1 minuto, usa Claude)</label>
+        <div class="actions"><button type="button" class="primary" id="create">Crear invitación</button></div>
+        <div class="banner" id="created" hidden></div>
+      </fieldset>
+
+      <h2>Invitaciones</h2>
+      <p class="muted" id="empty" hidden>Todavía no hay invitaciones.</p>
+      <div class="events" id="invites"></div>
+
+      <h2>Accesos rápidos</h2>
+      <div class="actions">
+        <a class="button-link" href="/?client=demo-hvac" target="_blank" rel="noopener">Demo</a>
+        <a class="button-link" id="demo-dashboard" target="_blank" rel="noopener">Panel de la demo</a>
+        <button type="button" class="secondary" id="logout">Salir</button>
+      </div>
+    </div>
+  </main>
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    const STATUS = {
+      prefilling: "Prellenando desde el sitio",
+      open: "Esperando al cliente",
+      changes_requested: "Cambios pedidos",
+      testing: "Corriendo pruebas",
+      review: "Listo para revisar",
+      live: "En vivo",
+    };
+    let token = "";
+
+    const store = {
+      get() {
+        try { return sessionStorage.getItem("admin-token") || localStorage.getItem("admin-token") || ""; } catch { return ""; }
+      },
+      set(value, remember) {
+        try {
+          sessionStorage.setItem("admin-token", value);
+          if (remember) localStorage.setItem("admin-token", value);
+        } catch {}
+      },
+      clear() {
+        try { sessionStorage.removeItem("admin-token"); localStorage.removeItem("admin-token"); } catch {}
+      },
+    };
+
+    function showError(message) {
+      $("error").textContent = message;
+      $("error").hidden = !message;
+    }
+
+    async function api(path, init = {}) {
+      const res = await fetch(path, { ...init, headers: { ...(init.headers || {}), authorization: `Bearer ${token}`, "content-type": "application/json" } });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        store.clear();
+        $("app").hidden = true;
+        $("login").hidden = false;
+        throw new Error("Token incorrecto. Revísalo en Render → Environment → ADMIN_TOKEN.");
+      }
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      return data;
+    }
+
+    async function copy(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.textContent;
+        button.textContent = "Copiado";
+        setTimeout(() => (button.textContent = original), 1500);
+      } catch {
+        prompt("Copia este enlace:", text);
+      }
+    }
+
+    function linkButton(label, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "secondary";
+      b.textContent = label;
+      b.addEventListener("click", () => onClick(b));
+      return b;
+    }
+
+    function render(invites) {
+      const list = $("invites");
+      list.replaceChildren();
+      $("empty").hidden = invites.length > 0;
+      for (const i of invites) {
+        const card = document.createElement("article");
+        card.className = "event";
+        const head = document.createElement("div");
+        head.className = "event-head";
+        const tag = document.createElement("span");
+        tag.className = `tag ${i.status === "live" ? "booking" : i.status === "review" ? "escalation" : "lead"}`;
+        tag.textContent = STATUS[i.status] ?? i.status;
+        const name = document.createElement("strong");
+        name.textContent = i.business_name;
+        head.append(tag, name);
+        const meta = document.createElement("p");
+        meta.className = "muted";
+        meta.style.margin = "0 0 8px";
+        const qa = i.qa ? (i.qa.error ? " · pruebas: error" : ` · pruebas ${i.qa.passed}/${i.qa.total}`) : "";
+        meta.textContent = `${i.contact_email || "sin correo"} · ${new Date(i.updated_at).toLocaleString()}${qa}`;
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        actions.append(linkButton("Copiar enlace del formulario", (b) => copy(i.links.form, b)));
+        actions.append(linkButton("Abrir revisión", () => window.open(i.links.review, "_blank", "noopener")));
+        if (i.status === "live") {
+          actions.append(linkButton("Abrir panel del cliente", () => window.open(i.links.dashboard, "_blank", "noopener")));
+          actions.append(linkButton("Copiar código del widget", (b) => copy(i.links.widget, b)));
+        }
+        card.append(head, meta, actions);
+        list.append(card);
+      }
+    }
+
+    async function load() {
+      showError("");
+      try {
+        const { invites } = await api("/api/admin/invites");
+        $("login").hidden = true;
+        $("app").hidden = false;
+        $("demo-dashboard").href = `/dashboard.html?client=demo-hvac&token=${encodeURIComponent(token)}`;
+        render(invites);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    $("enter").addEventListener("click", () => {
+      token = $("token").value.trim();
+      if (!token) return showError("Escribe el ADMIN_TOKEN.");
+      store.set(token, $("remember").checked);
+      load();
+    });
+
+    $("create").addEventListener("click", async () => {
+      showError("");
+      const business_name = $("business").value.trim();
+      if (!business_name) return showError("Escribe el nombre del negocio.");
+      $("create").disabled = true;
+      $("create").textContent = "Creando…";
+      try {
+        const invite = await api("/api/admin/invites", {
+          method: "POST",
+          body: JSON.stringify({
+            business_name,
+            contact_email: $("email").value.trim() || undefined,
+            website: $("website").value.trim() || undefined,
+            prefill: $("prefill").checked,
+          }),
+        });
+        const box = $("created");
+        box.replaceChildren();
+        const p = document.createElement("p");
+        p.style.margin = "0 0 8px";
+        p.textContent = `Invitación creada para ${invite.business_name}. Mándale al cliente el enlace del formulario:`;
+        const code = document.createElement("pre");
+        code.textContent = invite.links.form;
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        actions.append(linkButton("Copiar enlace", (b) => copy(invite.links.form, b)));
+        actions.append(linkButton("Abrir formulario", () => window.open(invite.links.form, "_blank", "noopener")));
+        box.append(p, code, actions);
+        box.hidden = false;
+        $("business").value = $("email").value = $("website").value = "";
+        load();
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        $("create").disabled = false;
+        $("create").textContent = "Crear invitación";
+      }
+    });
+
+    $("logout").addEventListener("click", () => {
+      store.clear();
+      token = "";
+      $("token").value = "";
+      $("app").hidden = true;
+      $("login").hidden = false;
+    });
+
+    token = store.get();
+    if (token) load();
+    setInterval(() => { if (token && !$("app").hidden) load(); }, 15000);
+  </script>
+</body>
+</html>
