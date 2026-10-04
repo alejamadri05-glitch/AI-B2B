@@ -50,7 +50,8 @@ export async function personalizeLead(lead, reviews, client = new Anthropic()) {
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-    system: SYSTEM,
+    // Same instructions for every lead in a batch: cached after the first one.
+    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
     messages: [
       {
         role: "user",

@@ -48,12 +48,19 @@ async function grade(client, config, scenario, transcript, events, calls = []) {
     max_tokens: 2000,
     ...FALLBACK,
     output_config: { effort: "medium", format: { type: "json_schema", schema: GRADE_SCHEMA } },
-    system:
-      "You review conversations between a home-services company's AI receptionist and a customer. Judge only against the rubric. Fail the conversation if any part of the rubric is clearly not met, or if the assistant states a fact (price, policy, availability) that is not in the business information. Give the reason in one or two sentences in Spanish.",
+    // Instructions + business information are identical for every scenario of a
+    // run, so they are cached once and read by the other graders.
+    system: [
+      {
+        type: "text",
+        text: `You review conversations between a home-services company's AI receptionist and a customer. Judge only against the rubric. Fail the conversation if any part of the rubric is clearly not met, or if the assistant states a fact (price, policy, availability) that is not in the business information. Give the reason in one or two sentences in Spanish.\n\nBusiness information (JSON):\n${JSON.stringify(config, null, 2)}`,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: [
       {
         role: "user",
-        content: `Business information (JSON):\n${JSON.stringify(config, null, 2)}\n\nRubric: ${scenario.rubric}\n\nConversation:\n\n${formatTranscript(transcript)}\n\nTools the assistant called, in order (JSON):\n${JSON.stringify(calls, null, 2)}\n\nRecords those tools created (JSON):\n${JSON.stringify(events.map((e) => ({ type: e.type, ...e.data })), null, 2)}`,
+        content: `Rubric: ${scenario.rubric}\n\nConversation:\n\n${formatTranscript(transcript)}\n\nTools the assistant called, in order (JSON):\n${JSON.stringify(calls, null, 2)}\n\nRecords those tools created (JSON):\n${JSON.stringify(events.map((e) => ({ type: e.type, ...e.data })), null, 2)}`,
       },
     ],
   });

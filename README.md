@@ -61,7 +61,7 @@ Variables de entorno opcionales:
 | `WEBHOOK_URL` | Webhook global para eventos. Cada cliente puede tener el suyo en `webhook_url` |
 | `DATA_DIR` | Carpeta donde se guardan los eventos (por defecto `data/`) |
 
-Cada llamada a la API imprime en la consola los tokens usados (`in`, `cache_read`, `out`). Úsalos para medir el costo real por conversación antes de fijar tus precios.
+Cada llamada a la API imprime en la consola los tokens usados (`in`, `cache_read`, `cache_write`, `out`). El bot usa caché de prompts en tres niveles: las herramientas (compartidas entre todos los clientes), las instrucciones de cada cliente (1 hora, `PROMPT_CACHE_TTL`) y la conversación en curso (5 minutos). Un `cache_read` alto significa que esa parte se cobró a una fracción del precio. Úsalos para medir el costo real por conversación antes de fijar tus precios.
 
 ## Cómo usarlo para vender
 

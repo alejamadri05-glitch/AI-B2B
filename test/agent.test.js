@@ -73,7 +73,10 @@ test("booking a full turn: check availability, book, reply", async () => {
   assert.equal(first.tools.length, 4);
   assert.match(first.system[0].text, /Bluebonnet Heating & Air/);
   assert.doesNotMatch(first.system[0].text, /webhook_url/);
-  assert.deepEqual(first.system[0].cache_control, { type: "ephemeral" }, "fixed instructions get their own cache point");
+  assert.deepEqual(first.system[0].cache_control, { type: "ephemeral", ttl: "1h" }, "fixed instructions get their own 1-hour cache point");
+  assert.deepEqual(first.tools.at(-1).cache_control, { type: "ephemeral", ttl: "1h" }, "tools are cached too");
+  assert.equal(first.tools.filter((t) => t.cache_control).length, 1, "only one marker on the tools");
+  assert.deepEqual(first.cache_control, { type: "ephemeral" }, "conversation tail keeps the 5-minute automatic cache");
 
   const bookings = readEvents(config.slug).filter((e) => e.type === "booking");
   assert.equal(bookings.length, 1);

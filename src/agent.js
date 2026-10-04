@@ -9,6 +9,13 @@ import { describeNow } from "./calendar.js";
 export const MODEL = process.env.MODEL || "claude-opus-5-5";
 // Short, chatty replies don't need deep reasoning; raise to "medium" if quality suffers.
 const EFFORT = process.env.EFFORT || "low";
+// How long the fixed part of the prompt (tools + business instructions) stays
+// cached. New website chats usually arrive 5-60 minutes apart, where the 1-hour
+// cache pays off; set "5m" for clients with constant traffic.
+const PROMPT_CACHE = { type: "ephemeral", ttl: process.env.PROMPT_CACHE_TTL === "5m" ? "5m" : "1h" };
+// The tool definitions are the same for every client, so they get their own
+// cache point and are shared across clients. Built once so the bytes never change.
+const CACHED_TOOLS = TOOLS.map((tool, i) => (i === TOOLS.length - 1 ? { ...tool, cache_control: PROMPT_CACHE } : tool));
 const MAX_TOOL_ROUNDS = 8;
 // If the model declines a request, the API retries it on Anthropic's recommended
 // fallback model inside the same call.
@@ -43,11 +50,12 @@ export async function runTurn({ config, history, userText, sessionId, channel = 
         betas: [FALLBACK_BETA],
         fallbacks: "default",
         output_config: { effort: EFFORT },
-        // Two cache points: one at the end of the fixed instructions, shared by every
-        // conversation of this client, plus the automatic one for the growing history.
+        // Three cache points, longest-lived first: the tools (shared by all clients),
+        // this client's instructions (shared by its conversations), and the
+        // automatic 5-minute one for the growing conversation.
         cache_control: { type: "ephemeral" },
-        system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-        tools: TOOLS,
+        system: [{ type: "text", text: system, cache_control: PROMPT_CACHE }],
+        tools: CACHED_TOOLS,
         messages: history,
       });
       logUsage(config.slug, response);
